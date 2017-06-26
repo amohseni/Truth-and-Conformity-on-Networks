@@ -4,21 +4,24 @@
 
 
 ### Install packages
+library(animation)
 library(ggplot2)
 library(igraph)
-
+# set.seed(13)
 
 ### Establish Global Variables
-N <- 2 # Number of agents
+N <- 50 # Number of agents
 Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
 # where α_i denotes the truth-seeking orientation of agent i
 # and (1 - α_i) denotes social coordination orientation of agent i
-Duration <- 10 # number of rounds of play
-NetworkChoices <- rbinom(N, 1, .5) # inital vector of network choices
+Duration <- 20 # number of rounds of play
+NetworkChoices <- rep(0, N)
+# NetworkChoices <- rbinom(N, 1, .5) # inital vector of network choices
 HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
 HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
 Prior <- c(0.5) # initial ignorance prior for all agents
-PublicBelief <- c() # history of public belief
+PublicBelief <- c() # evolution of public belief
+PublicDeclarations <- c() # evolution of public declarations
 Theta <- 1 # preset the true state of the world
 
 
@@ -55,8 +58,8 @@ Theta <- 1 # preset the true state of the world
   Credence <- function(i, C, S) {
     x <- (1 + ( ( 1 - Prior ) / Prior ) * ( (1 - S) / S ) ) ^ -1
     z <- ifelse( C == 1, x, (1 - x) )
-    print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
-    print(z)
+    # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
+    # print(z)
     return(z)
   }
   
@@ -64,16 +67,16 @@ Theta <- 1 # preset the true state of the world
   # as her assessement of the proability of the truth of C
   TruthSeekingPayoff <- function(i, C, S) {
     z <- Credence(i, C, S)
-    print(paste("Player", i, "EPISTEMIC PAYOFF for action", C, sep = " "))
-    print(z)
+    # print(paste("Player", i, "EPISTEMIC PAYOFF for action", C, sep = " "))
+    # print(z)
     return(z)
   }
   
   # Define the SOCIAL COORDINATION payoff to player i for choice C
   CoordinationPayoff <- function(i, C) {
       z <- table(factor(NetworkChoices[-i], c(0,1)))[[C+1]] / (N-1)
-      print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
-      print(z)
+      # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
+      # print(z)
       return(z)
     }
   
@@ -83,23 +86,23 @@ Theta <- 1 # preset the true state of the world
   # and the product of her coordination orientation (1 - α_i) and coordination payoff
   EU <- function(i, C, S) {
     z <- Alpha[i] * TruthSeekingPayoff(i, C, S) + (1 - Alpha[i]) * CoordinationPayoff(i, C)
-    print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
-    print(z)
+    # print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
+    # print(z)
     return(z)
   }
   
   # Define the BEST RESPONSE function to player i
   # as playing the declaration of the social policy with the highest expected payoff
   BR <- function(i, S) {
-    print("------------------------------")
-    print(paste("Player", i, "TYPE", sep = " "))
-    print(Alpha[i])
-    print(paste("Player", i, "SIGNAL", sep = " "))
-    print(S)
+    # print("------------------------------")
+    # print(paste("Player", i, "TYPE", sep = " "))
+    # print(Alpha[i])
+    # print(paste("Player", i, "SIGNAL", sep = " "))
+    # print(S)
     z <- which.max( c( EU(i, 0, S), EU(i, 1, S) ) ) - 1
-    print(paste("Player", i, "BEST RESPONSE", sep = " "))
-    print(z)
-    print("------------------------------")
+    # print(paste("Player", i, "BEST RESPONSE", sep = " "))
+    # print(z)
+    # print("------------------------------")
     return(z)
   }
   
@@ -138,17 +141,17 @@ Theta <- 1 # preset the true state of the world
       L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
     }
     
-    print("LIKELIHOOD L1 of declaration given Theta: 1")
+    # print("LIKELIHOOD L1 of declaration given Theta: 1")
     if (z == 0) { L1 <- (1-L1) } # Take the complement of the probability for declaration ¬z
-    print(L1)
-    print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
+    # print(L1)
+    # print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
     if (z == 0) { L0 <- (1-L0) } # Take the complement of the probability for declaration ¬z
-    print(L0)
+    # print(L0)
     
     # Compute P(Theta|z) or P(Theta|¬z)
     w <- (1+((1-Prior)/Prior)*(L0/L1))^-1
-    print("POSTERIOR/PUBLIC BELIEF")
-    print(w)
+    # print("POSTERIOR/PUBLIC BELIEF")
+    # print(w)
     return(w)
   }
 
@@ -160,15 +163,15 @@ Theta <- 1 # preset the true state of the world
   # print(paste("The true state of the world is", Theta , sep = ))
   # print(Theta)
   
-  print("------------------------------")
-  print("Initial conditions")
-  print(NetworkChoices)
+  # print("------------------------------")
+  # print("Initial conditions")
+  # print(NetworkChoices)
   
 ### Run a round of the Simulation
   for(t in 1:Duration) {
     
-    print("------------------------------")
-    print(paste("ROUND", t, sep = ))
+    # print("------------------------------")
+    # print(paste("ROUND", t, sep = ))
     
     # Generate the round's random order of play
     agentIndex <- sample(1:N, N, replace = FALSE)
@@ -191,14 +194,18 @@ Theta <- 1 # preset the true state of the world
       # Update the vector of current network choices
       # with the agent's DECLARATION z
       NetworkChoices[agentIndex[i]] <- z
+      
       # Update the history of play for the round
       HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
+      
+      # Record the proportion of players declaring Theta
+      PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
     }
     
     # Print the history of play
-    print("------------------------------")
-    print("HISTORY of PLAY")
-    print(HistoryOfPlay)
+    # print("------------------------------")
+    # print("HISTORY of PLAY")
+    # print(HistoryOfPlay)
     
     # Replace the agents 
     # by reset the Alpha vector
@@ -216,19 +223,26 @@ Theta <- 1 # preset the true state of the world
   # l <- layout_on_sphere(net)
   
   # Run network animation
-  oopt = ani.options(interval = .4)
-  for (i in 1: (N*Duration + 1)) {
-  plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-       vertex.frame.color = nodes[[i+1]]+1, vertex.color = nodes[[i+1]]+1,
-       edge.color="gray")
-    ani.pause()
-  }
-  ani.options(oopt)
+  # oopt = ani.options(interval = .1)
+  # for (i in 1: (N*Duration + 1)) {
+  # plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
+  #      vertex.frame.color = nodes[[i+1]]+1, vertex.color = nodes[[i+1]]+1,
+  #      edge.color="gray")
+  #   ani.pause()
+  # }
+  # ani.options(oopt)
   
   # Print the evolution of the public belief
-  PublicBeliefPlot <- data.frame(1:(N*Duration), PublicBelief)
-  colnames(PublicBeliefPlot) <- c("Turn","PublicBelief")
-  p <- ggplot(data = PublicBeliefPlot, aes(x = Turn, y = PublicBelief))
-  p + geom_line(aes(color = "Orange"))
+  PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
+  colnames(PublicBeliefActionPlot) <- c("Turn","PublicBelief")
+  p <- ggplot() +
+    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicBelief), colour="black") + 
+    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicDeclarations), colour="red") +
+    ggtitle(expression(paste("Public belief in ", theta, ", and its declaration S, over time"))) +
+    labs(x = "Turn Number", y = NULL) +
+    theme(legend.position="none") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    ylim(0, 1)
+  print(p)
   
   
