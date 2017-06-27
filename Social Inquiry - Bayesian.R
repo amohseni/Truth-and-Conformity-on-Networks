@@ -10,13 +10,13 @@ library(igraph)
 # set.seed(13)
 
 ### Establish Global Variables
-N <- 50 # Number of agents
+N <- 20 # Number of agents
 Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
 # where α_i denotes the truth-seeking orientation of agent i
 # and (1 - α_i) denotes social coordination orientation of agent i
-Duration <- 20 # number of rounds of play
-NetworkChoices <- rep(0, N)
-# NetworkChoices <- rbinom(N, 1, .5) # inital vector of network choices
+Duration <- 10 # number of rounds of play
+# NetworkChoices <- rep(0, N)
+NetworkChoices <- rbinom(N, 1, .5) # inital vector of network choices
 HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
 HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
 Prior <- c(0.5) # initial ignorance prior for all agents
@@ -223,14 +223,14 @@ Theta <- 1 # preset the true state of the world
   # l <- layout_on_sphere(net)
   
   # Run network animation
-  # oopt = ani.options(interval = .1)
-  # for (i in 1: (N*Duration + 1)) {
-  # plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-  #      vertex.frame.color = nodes[[i+1]]+1, vertex.color = nodes[[i+1]]+1,
-  #      edge.color="gray")
-  #   ani.pause()
-  # }
-  # ani.options(oopt)
+  oopt = ani.options(interval = .1)
+  for (i in 1: (N*Duration + 1)) {
+  plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
+       vertex.frame.color = nodes[[i+1]]+1, vertex.color = nodes[[i+1]]+1,
+       edge.color="gray")
+    ani.pause()
+  }
+  ani.options(oopt)
   
   # Print the evolution of the public belief
   PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
