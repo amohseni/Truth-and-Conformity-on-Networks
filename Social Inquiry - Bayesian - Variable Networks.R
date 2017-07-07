@@ -1,6 +1,6 @@
 # TRUTH AND CONFORMITY ON NETWORKS
 # SIMULATIONS
-# by Aydin Mohseni
+# by Aydin Mohseni & Cole Williams
 
 
 ### Install packages
@@ -10,19 +10,61 @@ library(igraph)
 # set.seed(13)
 
 ### Establish Global Variables
+
 N <- 20 # Number of agents
-Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
-# where α_i denotes the truth-seeking orientation of agent i
-# and (1 - α_i) denotes social coordination orientation of agent i
-Duration <- 10 # number of rounds of play
-# NetworkChoices <- rep(0, N) # intial vector of network choices (all false)
-NetworkChoices <- rbinom(N, 1, .5) # inital vector of network choices
+Duration <- 2 # Number of rounds of play
+
+# Create Social network
+nodes <- c(1:N) # nodes
+NetworkType <- c("random")
+
+# Complete graph
+if (NetworkType == "complete") { 
+  edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
+}
+# Cycle graph
+if (NetworkType == "circle") { 
+  edges <- data.frame(from = c(1:N), to = c(2:N, 1))
+}
+# Star graph
+if (NetworkType == "star") { 
+  edges <- data.frame(from = rep(1, N-1), to = 2:N)
+}
+# Random graph
+if (NetworkType == "random") {
+  linkProbability <- 1/N
+  edgesVector <- c()
+  m <- matrix(NA, nrow = N, ncol = N)
+  for (i in 1:N) { m[i,] <- rbinom(N, 1, linkProbability) }
+  for (j in 1:N) { 
+    for (k in 1:N) {
+      if (m[j,k] == 1 & j != k) { edgesVector <- append(edgesVector, c(j,k)) }
+    } 
+  }
+  edges <- data.frame(from = edgesVector[c(TRUE, FALSE)], to = edgesVector[c(FALSE, TRUE)])
+}
+
+# (Adjacency) matrix of the neighbors for each player (node)
+adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
+for (i in 1:N) {
+  d <- as.vector(subset(edges, from == i | to == i))
+  adjacencyMatrix[i,] <- c(d[d != i], rep(NA, N-(length(d[d != i])+1)))
+}
+# NetworkChoices <- rep(0, N) # (consensus on false belief) intial vector of network choices
+NetworkChoices <- rbinom(N, 1, .5) # (random) inital vector of network choices
 HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
 HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
+
+# Create the population types and initial beliefs
+Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
+# where α_i denotes the truth-seeking orientation of agent i
+# and (1 - α_i) denotes her coordination orientation
 Prior <- c(0.5) # initial ignorance prior for all agents
 PublicBelief <- c() # evolution of public belief
 PublicDeclarations <- c() # evolution of public declarations
-Theta <- 1 # preset the true state of the world
+
+# Set the true state of the world
+Theta <- 0 # where state 0 is denoted by Orange, and 1 by Blue
 
 
 ### Define Functions
@@ -74,7 +116,9 @@ Theta <- 1 # preset the true state of the world
   
   # Define the SOCIAL COORDINATION payoff to player i for choice C
   CoordinationPayoff <- function(i, C) {
-      z <- table(factor(NetworkChoices[-i], c(0,1)))[[C+1]] / (N-1)
+      Neighbors <- adjacencyMatrix[i,]
+      Neighbors <- Neighbors[!is.na(Neighbors)]
+      z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / (N-1)
       # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
       # print(z)
       return(z)
@@ -213,11 +257,9 @@ Theta <- 1 # preset the true state of the world
   }
 
   # Graph the evolution of the network
-  nodes <- data.frame(c(1:N), t(HistoryOfPlay))
-  colnames(nodes) <- c("id", 1:(N*Duration + 1))
-  REPL <- function(x) { rep(x, N) }
-  edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
-  net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F) 
+  nodesOverTime <- data.frame(nodes, t(HistoryOfPlay))
+  colnames(nodesOverTime) <- c("id", 1:(N*Duration + 1))
+  net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F) 
   net <- simplify(net, remove.multiple = T, remove.loops = T)
   l <- layout_in_circle(net)
   # l <- layout_on_sphere(net)
@@ -226,7 +268,7 @@ Theta <- 1 # preset the true state of the world
   oopt = ani.options(interval = .1)
   for (i in 1: (N*Duration + 1)) {
   plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-       vertex.frame.color = nodes[[i+1]]+1, vertex.color = nodes[[i+1]]+1,
+       vertex.frame.color = nodesOverTime[[i+1]]+1, vertex.color = nodesOverTime[[i+1]]+1,
        edge.color="gray")
     ani.pause()
   }
@@ -235,14 +277,16 @@ Theta <- 1 # preset the true state of the world
   # Print the evolution of the public belief
   PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
   colnames(PublicBeliefActionPlot) <- c("Turn","PublicBelief")
-  p <- ggplot() +
-    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicBelief), colour="black") + 
-    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicDeclarations), colour="red") +
+  p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
+    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicBelief, colour = "Public Belief")) + 
+    geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicDeclarations, colour = "Declarations")) +
     ggtitle(expression(paste("Public belief in ", theta, ", and its declaration S, over time"))) +
-    labs(x = "Turn Number", y = NULL) +
-    theme(legend.position="none") +
+    labs(x = "Turn Number t", y = NULL) +
+    theme(legend.position = "right") +
+    theme(legend.title = element_blank()) +
     theme(plot.title = element_text(hjust = 0.5)) +
+    scale_color_manual(values=c("red", "black")) +
     ylim(0, 1)
   print(p)
-  
+
   
