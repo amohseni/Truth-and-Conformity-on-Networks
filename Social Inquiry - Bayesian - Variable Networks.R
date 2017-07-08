@@ -16,11 +16,13 @@ Duration <- 2 # Number of rounds of play
 
 # Create Social network
 nodes <- c(1:N) # nodes
-NetworkType <- c("random")
+NetworkType <- c("circle")
 
 # Complete graph
 if (NetworkType == "complete") { 
   edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
+  selfEdge <- N * c(0:(N-1)) + c(1:N)
+  edges <- edges[-selfEdge,]
 }
 # Cycle graph
 if (NetworkType == "circle") { 
@@ -44,12 +46,21 @@ if (NetworkType == "random") {
   edges <- data.frame(from = edgesVector[c(TRUE, FALSE)], to = edgesVector[c(FALSE, TRUE)])
 }
 
+# Preliminary network plot
+net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F) 
+net <- simplify(net, remove.multiple = T, remove.loops = T)
+l <- layout_in_circle(net)
+plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
+     vertex.frame.color = "gray", vertex.color = "white",
+     edge.color="gray")
+
 # (Adjacency) matrix of the neighbors for each player (node)
 adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
 for (i in 1:N) {
   d <- as.vector(subset(edges, from == i | to == i))
   adjacencyMatrix[i,] <- c(d[d != i], rep(NA, N-(length(d[d != i])+1)))
 }
+
 # NetworkChoices <- rep(0, N) # (consensus on false belief) intial vector of network choices
 NetworkChoices <- rbinom(N, 1, .5) # (random) inital vector of network choices
 HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
