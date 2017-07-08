@@ -3,8 +3,9 @@ title: TruthandConformity
 account: amohseni
 server: shinyapps.io
 appId: 194932
-bundleId: 896291
+bundleId: 896305
 url: https://amohseni.shinyapps.io/TruthandConformity/
-when: 1499475631.03862
+when: 1499478932.86849
 asMultiple: FALSE
 asStatic: FALSE
+ignoredFiles: Social Inquiry - Bayesian - Variable Networks.R|Social Inquiry - Bayesian.R

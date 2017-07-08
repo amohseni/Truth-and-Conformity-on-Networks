@@ -21,7 +21,7 @@ shinyServer(function(input, output) {
     nodes <- c(1:N) # nodes
 
     # Complete graph
-    if (input$NetworkType == 'Complete') { 
+    if (input$NetworkType == "Complete") { 
       edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
       selfEdge <- N * c(0:(N-1)) + c(1:N)
       edges <- edges[-selfEdge,]
@@ -63,12 +63,22 @@ shinyServer(function(input, output) {
       if ( nrow(d)!=0 ) { d <- unique(d[d != i]) } else { d <- c() }
       adjacencyMatrix[i,] <- c(d, rep(NA, N-1-length(d)))
     }
-    # 
-    # # NetworkChoices <- rep(0, N) # (consensus on false belief) intial vector of network choices
-    # NetworkChoices <- rbinom(N, 1, .5) # (random) inital vector of network choices
-    # HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
-    # HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
-    # 
+
+    # Initial declarations
+    if (input$InitialState == "Inaccurate Consensus") {
+      NetworkChoices <- rep(0, N)
+    }
+    if (input$InitialState == "Uniformly at Random") {
+      NetworkChoices <- rbinom(N, 1, .5) 
+    }
+    if (input$InitialState == "Accurate Consensus") {
+      NetworkChoices <- rep(1, N)
+    }
+    
+    # Matrices to save the coming history of declarations
+    HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
+    HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
+
     # # Create the population types and initial beliefs
     # Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N)
     # # where α_i denotes the truth-seeking orientation of agent i
@@ -276,7 +286,7 @@ shinyServer(function(input, output) {
     # net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F)
     # net <- simplify(net, remove.multiple = T, remove.loops = T)
     # l <- layout_in_circle(net)
-    # # l <- layout_on_sphere(net)
+    # l <- layout_on_sphere(net)
 
     # # Run network animation
     # oopt = ani.options(interval = .1)

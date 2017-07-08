@@ -2,13 +2,18 @@
 # << UI >>
 # by Aydin Mohseni & Cole Williams
 
+
+# Load the shiny GUI library
 library(shiny)
+
+# Set encoding for special characters
+# Sys.setlocale("LC_ALL", "fr_FR.UTF-8")
 
 # Define UI for application
 shinyUI(fluidPage(
   
-  # CSS for aesthetics
-  includeCSS("styles.css"),
+  # CSS for visual
+  includeCSS("www/spacelab.css"),
   
   # Main title
   titlePanel("Truth and Conformity in Dynamic Networks"),
@@ -32,6 +37,12 @@ shinyUI(fluidPage(
                    selected = "Complete"
                    ),
        
+       selectInput("InitialState", 
+                   "Initial State",
+                   c("Inaccurate Consensus", "Uniformly at Random", "Accurate Consensus"),
+                   selected = "Random"
+       ),
+       
        sliderInput("Duration",
                    "Rounds of Play:",
                    min = 1,
@@ -42,7 +53,13 @@ shinyUI(fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
-       plotOutput(outputId = "networkGame", width = "100%")
+      tabsetPanel(type = "tabs", 
+                  tabPanel("Network Animation", 
+                           plotOutput(outputId = "networkGame", width = "100%")
+                  ),
+                  tabPanel("Evolution of Beliefs and Declarations"
+                           
+                  )
+      )
     )
-  )
-))
+)))
