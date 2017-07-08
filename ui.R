@@ -39,8 +39,8 @@ shinyUI(fluidPage(
        
        selectInput("InitialState", 
                    "Initial State",
-                   c("Inaccurate Consensus", "Uniformly at Random", "Accurate Consensus"),
-                   selected = "Random"
+                   c("Consensus on Truth", "Uniformly at Random", "Consensus on Falsity"),
+                   selected = "Consensus on Falsity"
        ),
        
        sliderInput("Duration",
@@ -48,17 +48,23 @@ shinyUI(fluidPage(
                    min = 1,
                    max = 10,
                    value = 2
-                   )
+                   ),
+       
+       p(actionButton("runSimulation", "Run Simulation"), align = "center")
+       
     ),
     
     # Show a plot of the generated distribution
     mainPanel(
       tabsetPanel(type = "tabs", 
                   tabPanel("Network Animation", 
-                           plotOutput(outputId = "networkGame", width = "100%")
+                           plotOutput(outputId = "networkGame", 
+                                      width = "100%")
                   ),
-                  tabPanel("Evolution of Beliefs and Declarations"
-                           
+                  tabPanel("Evolution of Beliefs and Declarations",
+                           column(width = 6, offset = 0, style='padding:20px;', 
+                                  plotOutput(outputId = "evolutionPlot")
+                           )
                   )
       )
     )
