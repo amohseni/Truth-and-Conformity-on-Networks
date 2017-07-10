@@ -7,13 +7,13 @@
 library(shiny)
 
 # Set encoding for special characters
-# Sys.setlocale("LC_ALL", "fr_FR.UTF-8")
+Sys.setlocale("LC_ALL", "fr_FR.UTF-8")
 
 # Define UI for application
 shinyUI(fluidPage(
   
   # CSS for visual
-  includeCSS("www/spacelab.css"),
+  includeCSS("www/style.css"),
   
   # Main title
   titlePanel("Truth and Conformity in Dynamic Networks"),

@@ -9,10 +9,11 @@ library(animation)
 library(ggplot2)
 library(igraph)
 
-# Define server logic required to draw a histogram
+### Define server logic required to draw a histogram
 shinyServer(function(input, output, session) {
-   
-  output$networkGame <- renderPlot({
+  
+  # Set simulation global parameters, and output initial network plot
+  globalParameters <- reactive({
     
     N <- as.numeric(input$Players) # Number of agents
     Duration <- as.numeric(input$Duration) # Number of rounds of play
@@ -48,14 +49,6 @@ shinyServer(function(input, output, session) {
       edges <- data.frame(from = edgesVector[c(TRUE, FALSE)], to = edgesVector[c(FALSE, TRUE)])
     }
     
-    # Preliminary network plot
-    net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F)
-    net <- simplify(net, remove.multiple = T, remove.loops = T)
-    l <- layout_in_circle(net)
-    plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-         vertex.frame.color = "gray", vertex.color = "white",
-         edge.color="gray")
-
     # (Adjacency) matrix of the neighbors for each player (node)
     adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
     for (i in 1:N) {
@@ -63,7 +56,7 @@ shinyServer(function(input, output, session) {
       if ( nrow(d)!=0 ) { d <- unique(d[d != i]) } else { d <- c() }
       adjacencyMatrix[i,] <- c(d, rep(NA, N-1-length(d)))
     }
-
+    
     # Initial declarations
     if (input$InitialState == "Consensus on Truth") {
       NetworkChoices <- rep(1, N)
@@ -78,7 +71,7 @@ shinyServer(function(input, output, session) {
     # Matrices to save the coming history of declarations
     HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
     HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
-
+    
     # Create the population types and initial beliefs
     Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N)
     # where α_i denotes the truth-seeking orientation of agent i
@@ -86,9 +79,24 @@ shinyServer(function(input, output, session) {
     Prior <- c(0.5) # initial ignorance prior for all agents
     PublicBelief <- c() # evolution of public belief
     PublicDeclarations <- c() # evolution of public declarations
-
+    
     # Set the true state of the world
     Theta <- 0 # where state 0 is denoted by Orange, and 1 by Blue
+    
+  })
+  
+  # Plot initial network (Reactive End Point)
+  output$networkGame <- renderPlot({
+    
+    globalParameters()
+    
+    net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F)
+    net <- simplify(net, remove.multiple = T, remove.loops = T)
+    l <- layout_in_circle(net)
+    plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
+         vertex.frame.color = "gray", vertex.color = "white",
+         edge.color="gray")
+  }, height = 500, width = 500)
 
 
     ### Define Functions
@@ -224,73 +232,78 @@ shinyServer(function(input, output, session) {
     }
 
     #### Initialize Simulation
-
-    # Nature randomly chooses the state of the world as either 0 or 1,
-    # which determines the corresponding pdfs f1, or F0
-    # Theta <- rbinom(1, 1, prob = 0.5) + 1
-    # print(paste("The true state of the world is", Theta , sep = ))
-    # print(Theta)
-
-    # print("------------------------------")
-    # print("Initial conditions")
-    # print(NetworkChoices)
-
-    ### Run a round of the Simulation
-    for(t in 1:Duration) {
-
-      # print("------------------------------")
-      # print(paste("ROUND", t, sep = ))
-
-      # Generate the round's random order of play
-      agentIndex <- sample(1:N, N, replace = FALSE)
-
-      for(i in 1:N) {
-        # Have agent i get her private signal S about the state of the world
-        S <- Signal()
-
-        # Have agent i update her belief about the state of the world,
-        # calculate her current coordination payoff based on the declarations of
-        # and choose how to act.
-        # That is, choose which social policy to DECLARE
-        z <- BR(agentIndex[i], S)
-
-        # Update the public prior, given the declaration of agent i
-        Prior <- PublicPrior(agentIndex[i], z)
-        # Update the history of belief
-        PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
-
-        # Update the vector of current network choices
-        # with the agent's DECLARATION z
-        NetworkChoices[agentIndex[i]] <- z
-
-        # Update the history of play for the round
-        HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
-
-        # Record the proportion of players declaring Theta
-        PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
-      }
-
-      # Print the history of play
-      # print("------------------------------")
-      # print("HISTORY of PLAY")
-      # print(HistoryOfPlay)
-
-      # Replace the agents
-      # by reset the Alpha vector
-      Alpha <- rbeta(N, 1, 1)
-    }
+    runSimulation <- reactive({
     
-  }, height = 600, width = 600)
+      # Run (take a depdendency) with runSimulation action button pressed
+      input$runSimulation
+      
+      # Nature randomly chooses the state of the world as either 0 or 1,
+      # which determines the corresponding pdfs f1, or F0
+      # Theta <- rbinom(1, 1, prob = 0.5) + 1
+      # print(paste("The true state of the world is", Theta , sep = ))
+      # print(Theta)
+  
+      # print("------------------------------")
+      # print("Initial conditions")
+      # print(NetworkChoices)
+  
+      ### Run a round of the Simulation
+      for(t in 1:Duration) {
+  
+        # print("------------------------------")
+        # print(paste("ROUND", t, sep = ))
+  
+        # Generate the round's random order of play
+        agentIndex <- sample(1:N, N, replace = FALSE)
+  
+        for(i in 1:N) {
+          # Have agent i get her private signal S about the state of the world
+          S <- Signal()
+  
+          # Have agent i update her belief about the state of the world,
+          # calculate her current coordination payoff based on the declarations of
+          # and choose how to act.
+          # That is, choose which social policy to DECLARE
+          z <- BR(agentIndex[i], S)
+  
+          # Update the public prior, given the declaration of agent i
+          Prior <- PublicPrior(agentIndex[i], z)
+          # Update the history of belief
+          PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
+  
+          # Update the vector of current network choices
+          # with the agent's DECLARATION z
+          NetworkChoices[agentIndex[i]] <- z
+  
+          # Update the history of play for the round
+          HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
+  
+          # Record the proportion of players declaring Theta
+          PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
+        }
+  
+        # Print the history of play
+        # print("------------------------------")
+        # print("HISTORY of PLAY")
+        # print(HistoryOfPlay)
+  
+        # Replace the agents
+        # by reset the Alpha vector
+        Alpha <- rbeta(N, 1, 1)
+      }
+      
+    })
 
-    # 
+    
     # # Graph the evolution of the network
+    # output$networkAnimation <- renderPlot({
     # nodesOverTime <- data.frame(nodes, t(HistoryOfPlay))
     # colnames(nodesOverTime) <- c("id", 1:(N*Duration + 1))
     # net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F)
     # net <- simplify(net, remove.multiple = T, remove.loops = T)
     # l <- layout_in_circle(net)
     # l <- layout_on_sphere(net)
-
+    
     # # Run network animation
     # oopt = ani.options(interval = .1)
     # for (i in 1: (N*Duration + 1)) {
@@ -300,17 +313,13 @@ shinyServer(function(input, output, session) {
     #   ani.pause()
     # }
     # ani.options(oopt)
+    # }, height = 500, width = 500)
 
     ### Plot of evolution of public belief and declarations
-    v <- reactiveValues(data = NULL)  
-    
-    observeEvent(input$runSimulation, {
-      v$data <- runif(100)
-    })
-
     output$evolutionPlot <- renderPlot({
       
-      if (is.null(v$data)) return()  
+      # Run (take a depdendency) with runSimulation action button pressed
+      input$runSimulation
       
       # Print the evolution of the public belief
       PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
@@ -328,7 +337,7 @@ shinyServer(function(input, output, session) {
         ylim(0, 1)
       p
       
-    }, height = 500, width = 550)
+    }, height = 500, width = 500)
   
 })
 
