@@ -43,6 +43,12 @@ shinyUI(fluidPage(
                    selected = "Consensus on Falsity"
        ),
        
+       selectInput("TypeDistribution", 
+                   "Type Distribution",
+                   c("All Truth-Seeking", "Mixed Truth-Seeking & Conformist", "All Conformist"),
+                   selected = "Mixed Truth-Seeking & Conformist"
+       ),
+       
        sliderInput("Duration",
                    "Rounds of Play:",
                    min = 1,
@@ -56,6 +62,7 @@ shinyUI(fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
+      style='margin-bottom:180px;',
       tabsetPanel(type = "tabs", 
                   tabPanel("Network Animation", 
                            plotOutput(outputId = "networkGame", 
