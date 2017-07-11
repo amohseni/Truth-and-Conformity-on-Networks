@@ -5,7 +5,3 @@ by the competing priorities of accuracy and of conformity to one’s peers--shar
 
 Agents learn, via Bayesian conditionalization, both from private signal from nature, 
 and from the public opinions of other agents.
-
-
-warmth,
-a.
