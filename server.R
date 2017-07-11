@@ -358,12 +358,13 @@ shinyServer(function(input, output, session) {
         ggtitle("Public belief in the true state, and its declaration, over time") +
         labs(x = "Time", y = "Proportion") +
         theme_bw() +
-        # scale_x_continuous(breaks = NULL) +
         scale_y_continuous(breaks = seq(0, 1, .25)) +
-        theme(legend.position = "bottom") +
-        theme(legend.title = element_blank()) +
-        theme(plot.title = element_text(hjust = 0.5)) +
-        theme(text = element_text(size = 16)) +
+        theme(legend.position = "bottom",
+              legend.title = element_blank(),
+              plot.title = element_text(hjust = 0.5),
+              text = element_text(size = 16),
+              legend.text=element_text(size = 16)
+              ) +
         scale_color_manual(values=c("orange", "dimgray")) +
         ylim(0, 1)
       p
@@ -391,8 +392,7 @@ shinyServer(function(input, output, session) {
           theme(axis.ticks = element_blank(),
                 axis.text = element_blank(),
                 axis.title = element_text(size = 14),
-                panel.border = element_blank(),
-                plot.background = element_rect(fill = "transparent", colour = NA)
+                panel.border = element_blank()
           )
       }
       

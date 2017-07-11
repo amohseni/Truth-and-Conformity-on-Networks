@@ -40,12 +40,18 @@ shinyUI(fluidPage(
        
        # Only show this panel only if CUSTOM is selected in NETWORK TYPE
        conditionalPanel(
+         
          condition = "input.NetworkType == 'Random'",
-         sliderInput("NetworkDensity", "NetworkDensity", 
+         
+         align = "center",
+         
+         sliderInput("NetworkDensity", 
+                     "NetworkDensity", 
                      min =1 , 
                      max = 20, 
                      value = 4,
-                     ticks = FALSE
+                     width = '90%',
+                     step = 1
                      )
        ),
        
@@ -69,7 +75,8 @@ shinyUI(fluidPage(
          align = "center",
          
          column(width = 6, 
-                sliderInput("TypeBeta", "Conformist", 
+                sliderInput("TypeBeta", 
+                            "Conformist", 
                             min = 0 , 
                             max = 5, 
                             value = 1,
@@ -79,7 +86,8 @@ shinyUI(fluidPage(
          ),
                 
          column(width = 6, 
-            sliderInput("TypeAlpha", "Truth-Seeking", 
+            sliderInput("TypeAlpha", 
+                        "Truth-Seeking", 
                         min = 0 , 
                         max = 5, 
                         value = 1,
@@ -93,12 +101,12 @@ shinyUI(fluidPage(
        ),
 
        tags$style(type = "text/css", ".irs-grid-pol.small {height: 0px;}"),       
-       sliderInput("Duration",
+       
+       sliderInput("Duration", 
                    "Full Rounds of Play:",
                    min = 1,
                    max = 10,
-                   value = 2,
-                   ticks = seq(1, 10, 1),
+                   value = 3,
                    step = 1
                    ),
        
@@ -116,10 +124,20 @@ shinyUI(fluidPage(
                            plotOutput(outputId = "networkInit", 
                                       width = "100%")
                   ),
-                  tabPanel("Network Game"
-                           # , 
-                           # plotOutput(outputId = "networkAnimation", 
-                           #            width = "100%")
+                  tabPanel("Network Game",
+                           
+                           style='padding: 20px;',
+                           align = "center",
+                           
+                           sliderInput("SimulationStep", NULL, 
+                                       min = 1, 
+                                       max = 100,
+                                       value = 1, 
+                                       step = 1,
+                                       animate = animationOptions(interval=300, 
+                                                                  loop = F,
+                                                                  playButton = T, 
+                                                                  pauseButton = T))
                   ),                  
                   tabPanel("Evolution of Beliefs and Declarations",
                            column(width = 6, offset = 0, style='padding:20px;', 
