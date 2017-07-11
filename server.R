@@ -314,7 +314,8 @@ shinyServer(function(input, output, session) {
            edge.color="gray")
       
       # Outplut plot legend
-      legend(0px, 0px, 
+      par(xpd=TRUE)
+      legend(.6, 1.35, 
              c("Declaration of True State", "Declaration of False State"), 
              pch = 21,
              col = "gray", 
@@ -342,9 +343,9 @@ shinyServer(function(input, output, session) {
       colnames(PublicBeliefActionPlot) <- c("Turn","PublicBelief")
       p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
         geom_line(data = PublicBeliefActionPlot, size = 1.5,
-                  aes(x = Turn, y = PublicBelief, colour = "Public Belief")) +
+                  aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")) +
         geom_line(data = PublicBeliefActionPlot, size = 1.5,
-                  aes(x = Turn, y = PublicDeclarations, colour = "Declarations")) +
+                  aes(x = Turn, y = PublicDeclarations, colour = "Declarations of True State  ")) +
         ggtitle("Public belief in the true state, and its declaration, over time") +
         labs(x = "Time", y = "Proportion") +
         theme_bw() +
@@ -353,7 +354,7 @@ shinyServer(function(input, output, session) {
               legend.title = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size = 16),
-              legend.text=element_text(size = 16)
+              legend.text = element_text(size = 14)
               ) +
         scale_color_manual(values=c("orange2", "dimgray")) +
         ylim(0, 1)
