@@ -63,13 +63,13 @@ shinyServer(function(input, output, session) {
     }
     
     # Initial declarations
-    if (input$InitialDeclarations == "Consensus on Truth") {
+    if (input$InitialDeclarations == "Consensus on True State") {
       NetworkChoices <- rep(1, N)
     }
-    if (input$InitialDeclarations == "Mixed") {
+    if (input$InitialDeclarations == "Uniformly at Random") {
       NetworkChoices <- rbinom(N, 1, .5) 
     }
-    if (input$InitialDeclarations == "Consensus on Falsity") {
+    if (input$InitialDeclarations == "Consensus on False State") {
       NetworkChoices <- rep(0, N)
     }
     
@@ -82,7 +82,7 @@ shinyServer(function(input, output, session) {
     # and (1 - α_i) denotes her coordination orientation,
     # so the population type vector is given by α=(α_1,...,α_N)
     if (input$TypeDistribution == "All Truth-Seeking") { Alpha <- rep(1, N) }
-    if (input$TypeDistribution == "Mixed") { Alpha <- rbeta(N, 1, 1) }
+    if (input$TypeDistribution == "Heterogeneous") { Alpha <- rbeta(N, input$TypeAlpha, input$TypeBeta) }
     if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
     
     # Set the population initial belief
@@ -289,33 +289,10 @@ shinyServer(function(input, output, session) {
       return(list(N, Duration, NetworkChoices, nodes, edges, PublicDeclarations, PublicBelief, HistoryOfPlay))
       
     })
-
     
-    # # Graph the evolution of the network
-    # output$networkAnimation <- renderPlot({
-    # nodesOverTime <- data.frame(nodes, t(HistoryOfPlay))
-    # colnames(nodesOverTime) <- c("id", 1:(N*Duration + 1))
-    # net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F)
-    # net <- simplify(net, remove.multiple = T, remove.loops = T)
-    # l <- layout_in_circle(net)
-    # l <- layout_on_sphere(net)
     
-    # # Run network animation
-    # oopt = ani.options(interval = .1)
-    # for (i in 1: (N*Duration + 1)) {
-    #   plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-    #        vertex.frame.color = nodesOverTime[[i+1]]+1, vertex.color = nodesOverTime[[i+1]]+1,
-    #        edge.color="gray")
-    #   ani.pause()
-    # }
-    # ani.options(oopt)
-    # }, height = 500, width = 500)
-    
-    ### Plot initial network (Reactive End Point)
-    output$networkInit <- renderPlot({
-      
-      # Establish own color pallete
-      palette(c("white", "blue"))
+    ### Plot initial network, and its evolution over time
+    output$networkAnimation <- renderPlot({
       
       # Acquire (current) relevant global paremeter settings
       nodes <- doSimulation()[[4]]
@@ -327,13 +304,26 @@ shinyServer(function(input, output, session) {
       net <- simplify(net, remove.multiple = T, remove.loops = T)
       l <- layout_in_circle(net)
       
-      # Outplut graph plot
-      plot(net, edge.arrow.size = .4, 
+      # Output graph plot
+      plot(net, 
+           edge.arrow.size = .4, 
            vertex.label = NA, 
            layout = l,
            vertex.frame.color = "gray", 
-           vertex.color = HistoryOfPlay[1,],
+           vertex.color = HistoryOfPlay[input$simulationStep + 1,],
            edge.color="gray")
+      
+      # Outplut plot legend
+      legend(0px, 0px, 
+             c("Declaration of True State", "Declaration of False State"), 
+             pch = 21,
+             col = "gray", 
+             pt.bg = c("orange2", "white"), 
+             pt.cex = 2, 
+             cex = 1, 
+             bty = "n", 
+             ncol = 1)
+      
     }, height = 600, width = 600)
     
     
@@ -365,7 +355,7 @@ shinyServer(function(input, output, session) {
               text = element_text(size = 16),
               legend.text=element_text(size = 16)
               ) +
-        scale_color_manual(values=c("orange", "dimgray")) +
+        scale_color_manual(values=c("orange2", "dimgray")) +
         ylim(0, 1)
       p
       
@@ -375,7 +365,7 @@ shinyServer(function(input, output, session) {
     # of the distribution of truth-seeking vs.conformist types
     output$TypeDistributionPlot <- renderPlot({
  
-      if (input$TypeDistribution == "Mixed") {
+      if (input$TypeDistribution == "Heterogeneous") {
         alpha1 <- input$TypeAlpha
         beta2 <- input$TypeBeta
         x <- seq(0, 1, length=100)
@@ -396,6 +386,39 @@ shinyServer(function(input, output, session) {
           )
       }
       
+    })
+    
+    ### Update interface based on inputs from other interface inputs
+    
+    # Update the duration of the animation slider
+    # to be: # of Players * Duration + 1
+    observe({
+      
+      N <- as.numeric(input$Players)
+      Duration <- as.numeric(input$Duration)
+      
+      # Control the max of the simulationStep slider.
+      updateSliderInput(session, 
+                        "simulationStep",
+                        max = N * Duration)
+    })
+    
+    # Reset the slider animation to t = 0
+    # when other parameters are changed
+    observe({
+      
+      input$Players
+      input$Duration
+      input$NetworkType
+      input$NetworkDensity
+      input$InitialDeclarations
+      input$TypeDistribution
+      input$runSimulation
+      
+      # Control the max of the simulationStep slider.
+      updateSliderInput(session, 
+                        "simulationStep",
+                        value = 0)
     })
     
 })

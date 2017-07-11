@@ -16,7 +16,7 @@ shinyUI(fluidPage(
   includeCSS("www/style.css"),
   
   # Main title
-  titlePanel("Truth and Conformity in Dynamic Networks"),
+  titlePanel("Truth and Conformity on Networks"),
   
   # Load MathJax 
   withMathJax(),
@@ -57,40 +57,40 @@ shinyUI(fluidPage(
        
        selectInput("InitialDeclarations", 
                    "Initial Declarations",
-                   c("Consensus on Truth", "Mixed", "Consensus on Falsity"),
-                   selected = "Consensus on Falsity"
+                   c("Consensus on True State", "Uniformly at Random", "Consensus on False State"),
+                   selected = "Uniformly at Random"
        ),
        
        selectInput("TypeDistribution", 
                    "Type Distribution",
-                   c("All Truth-Seeking", "Mixed", "All Conformist"),
-                   selected = "Mixed"
+                   c("All Truth-Seeking", "Heterogeneous", "All Conformist"),
+                   selected = "Heterogeneous"
        ),
        
        # Only show this panel only if MIXED is selected in TYPE DISTRIBUTION
        conditionalPanel(
-         condition = "input.TypeDistribution == 'Mixed'",
+         condition = "input.TypeDistribution == 'Heterogeneous'",
          
          style='margin-bottom:100px;',
          align = "center",
          
          column(width = 6, 
-                sliderInput("TypeBeta", 
-                            "Conformist", 
-                            min = 0 , 
-                            max = 5, 
-                            value = 1,
-                            step = .2,
-                            ticks = FALSE
-                )
-         ),
-                
-         column(width = 6, 
             sliderInput("TypeAlpha", 
                         "Truth-Seeking", 
                         min = 0 , 
                         max = 5, 
-                        value = 1,
+                        value = 3,
+                        step = .2,
+                        ticks = FALSE
+            )
+         ),
+                
+         column(width = 6, 
+            sliderInput("TypeBeta", 
+                        "Conformist", 
+                        min = 0 , 
+                        max = 5, 
+                        value = 3,
                         step = .2,
                         ticks = FALSE
             )
@@ -106,7 +106,7 @@ shinyUI(fluidPage(
                    "Full Rounds of Play:",
                    min = 1,
                    max = 10,
-                   value = 3,
+                   value = 2,
                    step = 1
                    ),
        
@@ -117,28 +117,34 @@ shinyUI(fluidPage(
     # Show a plot of the generated distribution
     mainPanel(
       
-      style='margin-bottom:180px;',
-      
       tabsetPanel(type = "tabs", 
-                  tabPanel("Initial Network", 
-                           plotOutput(outputId = "networkInit", 
-                                      width = "100%")
-                  ),
-                  tabPanel("Network Game",
+                  tabPanel("Network Animation", 
                            
-                           style='padding: 20px;',
                            align = "center",
                            
-                           sliderInput("SimulationStep", NULL, 
-                                       min = 1, 
-                                       max = 100,
-                                       value = 1, 
+                           fluidRow(
+                             
+                             style='margin-top: 0px;',
+                             
+                             plotOutput(outputId = "networkAnimation", 
+                                        width = "100%")
+                           ),
+                           
+                           fluidRow(
+                             
+                             style='margin-top: 140px;',
+                             
+                             sliderInput("simulationStep", NULL, 
+                                       min = 0, 
+                                       max = 5,
+                                       value = 0, 
                                        step = 1,
-                                       animate = animationOptions(interval=300, 
-                                                                  loop = F,
-                                                                  playButton = T, 
-                                                                  pauseButton = T))
-                  ),                  
+                                       animate = animationOptions(interval = 100, 
+                                                                  loop = FALSE))
+                           )
+                           
+                  ),
+                  
                   tabPanel("Evolution of Beliefs and Declarations",
                            column(width = 6, offset = 0, style='padding:20px;', 
                                   plotOutput(outputId = "evolutionPlot")
