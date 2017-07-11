@@ -28,7 +28,8 @@ shinyUI(fluidPage(
                    "Number of Players:",
                    min = 2,
                    max = 50,
-                   value = 20
+                   value = 20,
+                   step = 1
                    ),
        
        selectInput("NetworkType", 
@@ -68,7 +69,7 @@ shinyUI(fluidPage(
          align = "center",
          
          column(width = 6, 
-                sliderInput("TypeBeta", "Beta", 
+                sliderInput("TypeBeta", "Conformist", 
                             min = 0 , 
                             max = 5, 
                             value = 1,
@@ -78,7 +79,7 @@ shinyUI(fluidPage(
          ),
                 
          column(width = 6, 
-            sliderInput("TypeAlpha", "Alpha", 
+            sliderInput("TypeAlpha", "Truth-Seeking", 
                         min = 0 , 
                         max = 5, 
                         value = 1,
@@ -87,16 +88,18 @@ shinyUI(fluidPage(
             )
          ),
          
-         plotOutput(outputId = "TypeDistributionPlot", width = "80%", height = "120px")
+         plotOutput(outputId = "TypeDistributionPlot", width = "90%", height = "120px")
          
        ),
-       
+
+       tags$style(type = "text/css", ".irs-grid-pol.small {height: 0px;}"),       
        sliderInput("Duration",
                    "Full Rounds of Play:",
                    min = 1,
                    max = 10,
                    value = 2,
-                   ticks = FALSE
+                   ticks = seq(1, 10, 1),
+                   step = 1
                    ),
        
        p(actionButton("runSimulation", "Run Simulation"), align = "center")

@@ -310,9 +310,12 @@ shinyServer(function(input, output, session) {
     # }
     # ani.options(oopt)
     # }, height = 500, width = 500)
-
+    
     ### Plot initial network (Reactive End Point)
     output$networkInit <- renderPlot({
+      
+      # Establish own color pallete
+      palette(c("white", "blue"))
       
       # Acquire (current) relevant global paremeter settings
       nodes <- doSimulation()[[4]]
@@ -325,8 +328,11 @@ shinyServer(function(input, output, session) {
       l <- layout_in_circle(net)
       
       # Outplut graph plot
-      plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-           vertex.frame.color = "gray", vertex.color = HistoryOfPlay[1,],
+      plot(net, edge.arrow.size = .4, 
+           vertex.label = NA, 
+           layout = l,
+           vertex.frame.color = "gray", 
+           vertex.color = HistoryOfPlay[1,],
            edge.color="gray")
     }, height = 600, width = 600)
     
@@ -358,13 +364,16 @@ shinyServer(function(input, output, session) {
         theme(legend.title = element_blank()) +
         theme(plot.title = element_text(hjust = 0.5)) +
         theme(text = element_text(size = 16)) +
-        scale_color_manual(values=c("orange", "black")) +
+        scale_color_manual(values=c("orange", "dimgray")) +
         ylim(0, 1)
       p
       
     }, height = 600, width = 600)
     
+    # Outplut plot for left input panel 
+    # of the distribution of truth-seeking vs.conformist types
     output$TypeDistributionPlot <- renderPlot({
+ 
       if (input$TypeDistribution == "Mixed") {
         alpha1 <- input$TypeAlpha
         beta2 <- input$TypeBeta
@@ -374,7 +383,7 @@ shinyServer(function(input, output, session) {
         colnames(dat) <- c("x", "y")
         
         ggplot(data=dat, aes(x=x, y=y)) +
-          geom_area(colour="orange", fill="orange") +
+          geom_area(colour="dimgray", fill="dimgray") +
           labs(x = "Truth-Seeking Orientation", y = NULL) +
           ylim(low = 0, high = 5) +
           theme_bw() +
@@ -382,16 +391,13 @@ shinyServer(function(input, output, session) {
           theme(axis.ticks = element_blank(),
                 axis.text = element_blank(),
                 axis.title = element_text(size = 14),
-                # panel.grid.minor = element_blank(), 
-                # panel.grid.major = element_blank(),
                 panel.border = element_blank(),
                 plot.background = element_rect(fill = "transparent", colour = NA)
           )
       }
+      
     })
     
-    output$beliefDistributionPlot <- renderPlot({ })
-  
 })
 
 ### EOD ###
