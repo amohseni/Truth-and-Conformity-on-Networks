@@ -37,23 +37,66 @@ shinyUI(fluidPage(
                    selected = "Complete"
                    ),
        
-       selectInput("InitialState", 
-                   "Initial State",
-                   c("Consensus on Truth", "Uniformly at Random", "Consensus on Falsity"),
+       # Only show this panel only if CUSTOM is selected in NETWORK TYPE
+       conditionalPanel(
+         condition = "input.NetworkType == 'Random'",
+         sliderInput("NetworkDensity", "NetworkDensity", 
+                     min =1 , 
+                     max = 20, 
+                     value = 4,
+                     ticks = FALSE
+                     )
+       ),
+       
+       selectInput("InitialDeclarations", 
+                   "Initial Declarations",
+                   c("Consensus on Truth", "Mixed", "Consensus on Falsity"),
                    selected = "Consensus on Falsity"
        ),
        
        selectInput("TypeDistribution", 
                    "Type Distribution",
-                   c("All Truth-Seeking", "Mixed Truth-Seeking & Conformist", "All Conformist"),
-                   selected = "Mixed Truth-Seeking & Conformist"
+                   c("All Truth-Seeking", "Mixed", "All Conformist"),
+                   selected = "Mixed"
+       ),
+       
+       # Only show this panel only if MIXED is selected in TYPE DISTRIBUTION
+       conditionalPanel(
+         condition = "input.TypeDistribution == 'Mixed'",
+         
+         style='margin-bottom:100px;',
+         align = "center",
+         
+         column(width = 6, 
+                sliderInput("TypeBeta", "Beta", 
+                            min = 0 , 
+                            max = 5, 
+                            value = 1,
+                            step = .2,
+                            ticks = FALSE
+                )
+         ),
+                
+         column(width = 6, 
+            sliderInput("TypeAlpha", "Alpha", 
+                        min = 0 , 
+                        max = 5, 
+                        value = 1,
+                        step = .2,
+                        ticks = FALSE
+            )
+         ),
+         
+         plotOutput(outputId = "TypeDistributionPlot", width = "80%", height = "120px")
+         
        ),
        
        sliderInput("Duration",
-                   "Rounds of Play:",
+                   "Full Rounds of Play:",
                    min = 1,
                    max = 10,
-                   value = 2
+                   value = 2,
+                   ticks = FALSE
                    ),
        
        p(actionButton("runSimulation", "Run Simulation"), align = "center")
@@ -62,12 +105,19 @@ shinyUI(fluidPage(
     
     # Show a plot of the generated distribution
     mainPanel(
+      
       style='margin-bottom:180px;',
+      
       tabsetPanel(type = "tabs", 
-                  tabPanel("Network Animation", 
-                           plotOutput(outputId = "networkGame", 
+                  tabPanel("Initial Network", 
+                           plotOutput(outputId = "networkInit", 
                                       width = "100%")
                   ),
+                  tabPanel("Network Game"
+                           # , 
+                           # plotOutput(outputId = "networkAnimation", 
+                           #            width = "100%")
+                  ),                  
                   tabPanel("Evolution of Beliefs and Declarations",
                            column(width = 6, offset = 0, style='padding:20px;', 
                                   plotOutput(outputId = "evolutionPlot")

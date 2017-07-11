@@ -10,144 +10,16 @@ library(ggplot2)
 library(igraph)
 
 
-### Define server logic required to draw a histogram
+### Define server logic for Application
 shinyServer(function(input, output, session) {
   
-  ### Define universal functions
-  
-  # STATES of the WORLD
-  # Define the two distributions f0, f1 corresponding to
-  # the two possible STATES OF THE WORLD: 0, 1
-  # as inverse transformations of the uniform distribution
-  #   State 0 has pdf : f0(x) = 2 - 2x,
-  #            and cdf: F0(x) = 2x - x^2, hence F0^-1(x) = 1-(1-x)^(1/2)
-  #   State 1 has pdf : f1(x) = 2x,
-  #           and cdf : F1(x) = x^2, hence F1^-1(x) = x^(1/2)
-  F0_inverse <- function(x) { 1-(1-x)^(1/2) }
-  F1_inverse <- function(x) { x^(1/2) }
-  
-  
-  # SIGNALS about STATES of the WORLD
-  # Define the function corresponding to the acquisition of a SIGNAL
-  # by an agent about the true state of the world
-  Signal <- function(x) {
-    # Draw a realization from the uniform distribution
-    S <- array(runif (1, min = 0, max = 1), 1)
-    # and apply the correct distribution transformation, depending on the state of the world Theta
-    ifelse(Theta == 0, w <- apply(S , 1 , FUN = F0_inverse), w <- apply(S , 1 , FUN = F1_inverse))
-    return(w)
-  }
-  
-  # Define the CREDENCE function for player i for choice C
-  # using Bayes' rule, as Pr(C|D) = Pr(D|C)Pr(C)/Pr(D)
-  # That is, the poster probability of the truth of C,
-  # given the product of the likelihood of the datat D given C,
-  # over the total probability of D
-  Credence <- function(i, C, S) {
-    x <- (1 + ( ( 1 - Prior ) / Prior ) * ( (1 - S) / S ) ) ^ -1
-    z <- ifelse( C == 1, x, (1 - x) )
-    # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
-    # print(z)
-    return(z)
-  }
-  
-  # Define the TRUTH-SEEKING payoff to player i for choice C
-  # as her assessement of the proability of the truth of C
-  TruthSeekingPayoff <- function(i, C, S) {
-    z <- Credence(i, C, S)
-    # print(paste("Player", i, "EPISTEMIC PAYOFF for action", C, sep = " "))
-    # print(z)
-    return(z)
-  }
-  
-  # Define the SOCIAL COORDINATION payoff to player i for choice C
-  CoordinationPayoff <- function(i, C) {
-    Neighbors <- adjacencyMatrix[i,]
-    Neighbors <- Neighbors[!is.na(Neighbors)]
-    z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / (N-1)
-    # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
-    # print(z)
-    return(z)
-  }
-  
-  # Define the EXPECTED PAYOFF to player i for choice C
-  # as a convex combination of
-  # the product of her truth-seeking orientation α_i and her truth-seeking payoff
-  # and the product of her coordination orientation (1 - α_i) and coordination payoff
-  EU <- function(i, C, S) {
-    z <- Alpha[i] * TruthSeekingPayoff(i, C, S) + (1 - Alpha[i]) * CoordinationPayoff(i, C)
-    # print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
-    # print(z)
-    return(z)
-  }
-  
-  # Define the BEST RESPONSE function to player i
-  # as playing the declaration of the social policy with the highest expected payoff
-  BR <- function(i, S) {
-    # print("------------------------------")
-    # print(paste("Player", i, "TYPE", sep = " "))
-    # print(Alpha[i])
-    # print(paste("Player", i, "SIGNAL", sep = " "))
-    # print(S)
-    z <- which.max( c( EU(i, 0, S), EU(i, 1, S) ) ) - 1
-    # print(paste("Player", i, "BEST RESPONSE", sep = " "))
-    # print(z)
-    # print("------------------------------")
-    return(z)
-  }
-  
-  # Compute the LIKELIHOODS of the DECLARATION of the focal agent
-  # given each of the states of the world Theta and ¬Theta
-  # where here type alpha is denoted by x[1], here signal S is denoted x[2],
-  # Ni is the proportion of her neighbors declaring C (corresponding to Theta),
-  # and P is her private posterior.
-  
-  # Define the PUBLIC PRIOR function,
-  # whereby all players update their beliefs
-  # based on the declaration of the focal player
-  PublicPrior <- function(i, z) {
-    
-    # Retrieve the relevant parameters
-    Pr <-  Prior
-    Ns <-  CoordinationPayoff(i, z)
-    
-    # Then, compute the likelihood P(z|Theta) of her action given the state Theta
-    fTheta <- function(a) {
-      (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
-    }
-    if (Ns > .5) {
-      L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
-    } else {
-      L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
-    }
-    
-    # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
-    fNotTheta <- function(a) {
-      (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
-    }
-    if (Ns > .5) {
-      L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
-    } else {
-      L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
-    }
-    
-    # print("LIKELIHOOD L1 of declaration given Theta: 1")
-    if (z == 0) { L1 <- (1-L1) } # Take the complement of the probability for declaration ¬z
-    # print(L1)
-    # print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
-    if (z == 0) { L0 <- (1-L0) } # Take the complement of the probability for declaration ¬z
-    # print(L0)
-    
-    # Compute P(Theta|z) or P(Theta|¬z)
-    w <- (1+((1-Prior)/Prior)*(L0/L1))^-1
-    # print("POSTERIOR/PUBLIC BELIEF")
-    # print(w)
-    return(w)
-  }
-  
-  # Set simulation global parameters, and run simulation
+  # Set simulation global parameters, define functions, and run simulation
   doSimulation <- reactive({
     
+    # Run (take a depdendency) with runSimulation action button pressed
+    input$runSimulation
+    
+    ### Define global parameters
     N <- as.numeric(input$Players) # Number of agents
     Duration <- as.numeric(input$Duration) # Number of rounds of play
     
@@ -170,7 +42,7 @@ shinyServer(function(input, output, session) {
     }
     # Random graph
     if (input$NetworkType == "Random") {
-      linkProbability <- 1/N
+      linkProbability <- min(input$NetworkDensity/(2*N), 1)
       edgesVector <- c()
       m <- matrix(NA, nrow = N, ncol = N)
       for (i in 1:N) { m[i,] <- rbinom(N, 1, linkProbability) }
@@ -191,13 +63,13 @@ shinyServer(function(input, output, session) {
     }
     
     # Initial declarations
-    if (input$InitialState == "Consensus on Truth") {
+    if (input$InitialDeclarations == "Consensus on Truth") {
       NetworkChoices <- rep(1, N)
     }
-    if (input$InitialState == "Uniformly at Random") {
+    if (input$InitialDeclarations == "Mixed") {
       NetworkChoices <- rbinom(N, 1, .5) 
     }
-    if (input$InitialState == "Consensus on Falsity") {
+    if (input$InitialDeclarations == "Consensus on Falsity") {
       NetworkChoices <- rep(0, N)
     }
     
@@ -210,7 +82,7 @@ shinyServer(function(input, output, session) {
     # and (1 - α_i) denotes her coordination orientation,
     # so the population type vector is given by α=(α_1,...,α_N)
     if (input$TypeDistribution == "All Truth-Seeking") { Alpha <- rep(1, N) }
-    if (input$TypeDistribution == "Mixed Truth-Seeking & Conformist") { Alpha <- rbeta(N, 1, 1) }
+    if (input$TypeDistribution == "Mixed") { Alpha <- rbeta(N, 1, 1) }
     if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
     
     # Set the population initial belief
@@ -219,7 +91,139 @@ shinyServer(function(input, output, session) {
     PublicDeclarations <- c() # evolution of public declarations
     
     # Set the true state of the world
-    Theta <- 0 # where state 0 is denoted by Orange, and 1 by Blue
+    Theta <- 1 # where state 0 is denoted by Orange, and 1 by Blue
+    
+    ### Define universal functions
+    
+    # STATES of the WORLD
+    # Define the two distributions f0, f1 corresponding to
+    # the two possible STATES OF THE WORLD: 0, 1
+    # as inverse transformations of the uniform distribution
+    #   State 0 has pdf : f0(x) = 2 - 2x,
+    #            and cdf: F0(x) = 2x - x^2, hence F0^-1(x) = 1-(1-x)^(1/2)
+    #   State 1 has pdf : f1(x) = 2x,
+    #           and cdf : F1(x) = x^2, hence F1^-1(x) = x^(1/2)
+    F0_inverse <- function(x) { 1-(1-x)^(1/2) }
+    F1_inverse <- function(x) { x^(1/2) }
+    
+    # SIGNALS about STATES of the WORLD
+    # Define the function corresponding to the acquisition of a SIGNAL
+    # by an agent about the true state of the world
+    Signal <- function(x) {
+      # Draw a realization from the uniform distribution
+      S <- array(runif (1, min = 0, max = 1), 1)
+      # and apply the correct distribution transformation, depending on the state of the world Theta
+      ifelse(Theta == 0, w <- apply(S , 1 , FUN = F0_inverse), w <- apply(S , 1 , FUN = F1_inverse))
+      return(w)
+    }
+    
+    # Define the CREDENCE function for player i for choice C
+    # using Bayes' rule, as Pr(C|D) = Pr(D|C)Pr(C)/Pr(D)
+    # That is, the poster probability of the truth of C,
+    # given the product of the likelihood of the datat D given C,
+    # over the total probability of D
+    Credence <- function(i, C, S) {
+      x <- (1 + ( ( 1 - Prior ) / Prior ) * ( (1 - S) / S ) ) ^ -1
+      z <- ifelse( C == 1, x, (1 - x) )
+      # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
+      # print(z)
+      return(z)
+    }
+    
+    # Define the TRUTH-SEEKING payoff to player i for choice C
+    # as her assessement of the proability of the truth of C
+    TruthSeekingPayoff <- function(i, C, S) {
+      z <- Credence(i, C, S)
+      # print(paste("Player", i, "EPISTEMIC PAYOFF for action", C, sep = " "))
+      # print(z)
+      return(z)
+    }
+    
+    # Define the SOCIAL COORDINATION payoff to player i for choice C
+    CoordinationPayoff <- function(i, C) {
+      Neighbors <- adjacencyMatrix[i,]
+      Neighbors <- Neighbors[!is.na(Neighbors)]
+      z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / (N-1)
+      # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
+      # print(z)
+      return(z)
+    }
+    
+    # Define the EXPECTED PAYOFF to player i for choice C
+    # as a convex combination of
+    # the product of her truth-seeking orientation α_i and her truth-seeking payoff
+    # and the product of her coordination orientation (1 - α_i) and coordination payoff
+    EU <- function(i, C, S) {
+      z <- Alpha[i] * TruthSeekingPayoff(i, C, S) + (1 - Alpha[i]) * CoordinationPayoff(i, C)
+      # print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
+      # print(z)
+      return(z)
+    }
+    
+    # Define the BEST RESPONSE function to player i
+    # as playing the declaration of the social policy with the highest expected payoff
+    BR <- function(i, S) {
+      # print("------------------------------")
+      # print(paste("Player", i, "TYPE", sep = " "))
+      # print(Alpha[i])
+      # print(paste("Player", i, "SIGNAL", sep = " "))
+      # print(S)
+      z <- which.max( c( EU(i, 0, S), EU(i, 1, S) ) ) - 1
+      # print(paste("Player", i, "BEST RESPONSE", sep = " "))
+      # print(z)
+      # print("------------------------------")
+      return(z)
+    }
+    
+    # Compute the LIKELIHOODS of the DECLARATION of the focal agent
+    # given each of the states of the world Theta and ¬Theta
+    # where here type alpha is denoted by x[1], here signal S is denoted x[2],
+    # Ni is the proportion of her neighbors declaring C (corresponding to Theta),
+    # and P is her private posterior.
+    
+    # Define the PUBLIC PRIOR function,
+    # whereby all players update their beliefs
+    # based on the declaration of the focal player
+    PublicPrior <- function(i, z) {
+      
+      # Retrieve the relevant parameters
+      Pr <-  Prior
+      Ns <-  CoordinationPayoff(i, z)
+      
+      # Then, compute the likelihood P(z|Theta) of her action given the state Theta
+      fTheta <- function(a) {
+        (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
+      }
+      if (Ns > .5) {
+        L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
+      } else {
+        L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+      }
+      
+      # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
+      fNotTheta <- function(a) {
+        (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
+      }
+      if (Ns > .5) {
+        L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
+      } else {
+        L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+      }
+      
+      # print("LIKELIHOOD L1 of declaration given Theta: 1")
+      if (z == 0) { L1 <- (1-L1) } # Take the complement of the probability for declaration ¬z
+      # print(L1)
+      # print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
+      if (z == 0) { L0 <- (1-L0) } # Take the complement of the probability for declaration ¬z
+      # print(L0)
+      
+      # Compute P(Theta|z) or P(Theta|¬z)
+      w <- (1+((1-Prior)/Prior)*(L0/L1))^-1
+      # print("POSTERIOR/PUBLIC BELIEF")
+      # print(w)
+      return(w)
+    }
+    
     
     #### Initialize Simulation
       
@@ -308,11 +312,12 @@ shinyServer(function(input, output, session) {
     # }, height = 500, width = 500)
 
     ### Plot initial network (Reactive End Point)
-    output$networkGame <- renderPlot({
+    output$networkInit <- renderPlot({
       
       # Acquire (current) relevant global paremeter settings
       nodes <- doSimulation()[[4]]
       edges <- doSimulation()[[5]]
+      HistoryOfPlay <- doSimulation()[[8]]
       
       # Create graph structure for plotting
       net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F)
@@ -321,16 +326,13 @@ shinyServer(function(input, output, session) {
       
       # Outplut graph plot
       plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,
-           vertex.frame.color = "gray", vertex.color = "white",
+           vertex.frame.color = "gray", vertex.color = HistoryOfPlay[1,],
            edge.color="gray")
     }, height = 600, width = 600)
     
     
     ### Plot of evolution of public belief and declarations
     output$evolutionPlot <- renderPlot({
-      
-      # Run (take a depdendency) with runSimulation action button pressed
-      input$runSimulation
       
       # Acquire (current) relevant global paremeters, and simlulation outputs
       N <- doSimulation()[[1]]
@@ -343,20 +345,52 @@ shinyServer(function(input, output, session) {
       PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
       colnames(PublicBeliefActionPlot) <- c("Turn","PublicBelief")
       p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
-        geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicBelief, colour = "Public Belief")) +
-        geom_line(data = PublicBeliefActionPlot, aes(x = Turn, y = PublicDeclarations, colour = "Declarations")) +
+        geom_line(data = PublicBeliefActionPlot, size = 1.5,
+                  aes(x = Turn, y = PublicBelief, colour = "Public Belief")) +
+        geom_line(data = PublicBeliefActionPlot, size = 1.5,
+                  aes(x = Turn, y = PublicDeclarations, colour = "Declarations")) +
         ggtitle("Public belief in the true state, and its declaration, over time") +
         labs(x = "Time", y = "Proportion") +
         theme_bw() +
+        # scale_x_continuous(breaks = NULL) +
+        scale_y_continuous(breaks = seq(0, 1, .25)) +
         theme(legend.position = "bottom") +
         theme(legend.title = element_blank()) +
         theme(plot.title = element_text(hjust = 0.5)) +
         theme(text = element_text(size = 16)) +
-        scale_color_manual(values=c("red", "black")) +
+        scale_color_manual(values=c("orange", "black")) +
         ylim(0, 1)
       p
       
     }, height = 600, width = 600)
+    
+    output$TypeDistributionPlot <- renderPlot({
+      if (input$TypeDistribution == "Mixed") {
+        alpha1 <- input$TypeAlpha
+        beta2 <- input$TypeBeta
+        x <- seq(0, 1, length=100)
+        y <- dbeta(x, alpha1, beta2)
+        dat <- data.frame(x, y)
+        colnames(dat) <- c("x", "y")
+        
+        ggplot(data=dat, aes(x=x, y=y)) +
+          geom_area(colour="orange", fill="orange") +
+          labs(x = "Truth-Seeking Orientation", y = NULL) +
+          ylim(low = 0, high = 5) +
+          theme_bw() +
+          scale_x_continuous(minor_breaks = seq(1, 5, .5)) +
+          theme(axis.ticks = element_blank(),
+                axis.text = element_blank(),
+                axis.title = element_text(size = 14),
+                # panel.grid.minor = element_blank(), 
+                # panel.grid.major = element_blank(),
+                panel.border = element_blank(),
+                plot.background = element_rect(fill = "transparent", colour = NA)
+          )
+      }
+    })
+    
+    output$beliefDistributionPlot <- renderPlot({ })
   
 })
 
