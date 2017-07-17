@@ -3,9 +3,8 @@ title: TruthandConformity
 account: amohseni
 server: shinyapps.io
 appId: 194932
-bundleId: 899419
+bundleId: 900758
 url: https://amohseni.shinyapps.io/TruthandConformity/
-when: 1499774757.468
+when: 1499846722.28029
 asMultiple: FALSE
 asStatic: FALSE
-ignoredFiles: plots/Rplot.pdf|plots/Rplot01.pdf|plots/Rplot02.pdf|plots/Rplot03.pdf|plots/Rplot04.pdf|plots/Rplot05.pdf|plots/Rplot06.pdf

@@ -42,16 +42,12 @@ shinyServer(function(input, output, session) {
     }
     # Random graph
     if (input$NetworkType == "Random") {
-      linkProbability <- min(input$NetworkDensity/(2*N), 1)
-      edgesVector <- c()
-      m <- matrix(NA, nrow = N, ncol = N)
-      for (i in 1:N) { m[i,] <- rbinom(N, 1, linkProbability) }
-      for (j in 1:N) {
-        for (k in 1:N) {
-          if (m[j,k] == 1 & j != k) { edgesVector <- append(edgesVector, c(j,k)) }
-        }
-      }
-      edges <- data.frame(from = edgesVector[c(TRUE, FALSE)], to = edgesVector[c(FALSE, TRUE)])
+      numberOfPossibleEdges <- choose(N, 2)
+      numberOfEdges <- numberOfPossibleEdges * as.numeric(input$NetworkDensity) 
+      possibleEdges <- data.frame(t(combn(1:N, 2)))
+      colnames(possibleEdges) <- c("from", "to")
+      randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
+      edges <- possibleEdges[randomEdgesSubset, ]
     }
     
     # (Adjacency) matrix of the neighbors for each player (node)
@@ -143,9 +139,13 @@ shinyServer(function(input, output, session) {
     CoordinationPayoff <- function(i, C) {
       Neighbors <- adjacencyMatrix[i,]
       Neighbors <- Neighbors[!is.na(Neighbors)]
-      z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / (N-1)
-      # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
-      # print(z)
+      if (length(Neighbors) != 0) {
+        z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / length(Neighbors)
+        # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
+        # print(z)
+      } else { 
+        z <- 0
+      }
       return(z)
     }
     
@@ -376,7 +376,7 @@ shinyServer(function(input, output, session) {
         
         ggplot(data=dat, aes(x=x, y=y)) +
           geom_area(colour="dimgray", fill="dimgray") +
-          labs(x = "Truth-Seeking Orientation", y = NULL) +
+          labs(x = NULL, y = NULL) +
           ylim(low = 0, high = 5) +
           theme_bw() +
           scale_x_continuous(minor_breaks = seq(1, 5, .5)) +

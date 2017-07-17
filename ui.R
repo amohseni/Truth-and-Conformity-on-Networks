@@ -28,7 +28,7 @@ shinyUI(fluidPage(
                    "Number of Players:",
                    min = 2,
                    max = 50,
-                   value = 20,
+                   value = 15,
                    step = 1
                    ),
        
@@ -47,11 +47,11 @@ shinyUI(fluidPage(
          
          sliderInput("NetworkDensity", 
                      "NetworkDensity", 
-                     min =1 , 
-                     max = 20, 
-                     value = 4,
+                     min = 0, 
+                     max = 1, 
+                     value = .3,
                      width = '90%',
-                     step = 1
+                     step = .05
                      )
        ),
        
@@ -110,7 +110,7 @@ shinyUI(fluidPage(
                    step = 1
                    ),
        
-       p(actionButton("runSimulation", "Run Simulation"), align = "center")
+       p(actionButton("runSimulation", "Re-Run Simulation"), align = "center")
        
     ),
     
