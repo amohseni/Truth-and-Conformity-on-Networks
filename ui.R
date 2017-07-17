@@ -34,11 +34,28 @@ shinyUI(fluidPage(
        
        selectInput("NetworkType", 
                    "Network Type",
-                   c("Complete", "Circle", "Star", "Random"),
+                   c("Complete", "Circle", "Star", "Regular", "Random"),
                    selected = "Complete"
                    ),
        
-       # Only show this panel only if CUSTOM is selected in NETWORK TYPE
+       # Only show this panel only if REGULAR is selected in NETWORK TYPE
+       conditionalPanel(
+         
+         condition = "input.NetworkType == 'Regular'",
+         
+         align = "center",
+         
+         sliderInput("regDegree", 
+                     "Regular Network Degree", 
+                     min = 0, 
+                     max = 20, 
+                     value = 4,
+                     step = 2,
+                     width = '90%'
+                     )
+       ),
+       
+       # Only show this panel only if RANDOM is selected in NETWORK TYPE
        conditionalPanel(
          
          condition = "input.NetworkType == 'Random'",
@@ -46,13 +63,13 @@ shinyUI(fluidPage(
          align = "center",
          
          sliderInput("NetworkDensity", 
-                     "NetworkDensity", 
+                     "Network Density", 
                      min = 0, 
                      max = 1, 
                      value = .3,
-                     width = '90%',
-                     step = .05
-                     )
+                     step = .05,
+                     width = '90%'
+         )
        ),
        
        selectInput("InitialDeclarations", 
@@ -124,7 +141,7 @@ shinyUI(fluidPage(
                            
                            fluidRow(
                              
-                             style='margin-top: 0px;',
+                             style='margin-top: 20px;',
                              
                              plotOutput(outputId = "networkAnimation", 
                                         width = "100%")
@@ -146,8 +163,11 @@ shinyUI(fluidPage(
                   ),
                   
                   tabPanel("Evolution of Beliefs and Declarations",
-                           column(width = 6, offset = 0, style='padding:20px;', 
-                                  plotOutput(outputId = "evolutionPlot")
+                           
+                           style='margin-top: 20px;',
+
+                           column(width = 6, offset = 0, style='padding:0px;',
+                                  p(plotOutput(outputId = "evolutionPlot"), align = "center")
                            )
                   )
       )

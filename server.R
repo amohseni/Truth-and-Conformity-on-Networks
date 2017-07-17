@@ -40,6 +40,14 @@ shinyServer(function(input, output, session) {
     if (input$NetworkType == "Star") {
       edges <- data.frame(from = rep(1, N-1), to = 2:N)
     }
+    # Regular graph
+    if (input$NetworkType == "Regular") {
+      regDegree <- as.numeric(input$regDegree)/2
+      x <- rep(1:N, each = regDegree)
+      y <- x + 1:regDegree
+      y[y > N] <- y[y > N] - N
+      edges <- data.frame(from = x, to = y)
+    }
     # Random graph
     if (input$NetworkType == "Random") {
       numberOfPossibleEdges <- choose(N, 2)
@@ -403,6 +411,26 @@ shinyServer(function(input, output, session) {
                         "simulationStep",
                         max = N * Duration)
     })
+    
+    # Update the maximum degree of a regular network
+    # to be: # of Nodes - 1
+    observe({
+      
+      N <- as.numeric(input$Players)
+      
+      # Control the max of the simulationStep slider.
+      if (N %% 2 == 0) {
+        updateSliderInput(session, 
+                          "regDegree",
+                          max = N-2)  
+      } else {
+        updateSliderInput(session, 
+                          "regDegree",
+                          max = N-1)
+      }
+      
+    })
+    
     
     # Reset the slider animation to t = 0
     # when other parameters are changed
