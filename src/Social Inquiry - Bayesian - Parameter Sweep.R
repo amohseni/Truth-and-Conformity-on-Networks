@@ -13,10 +13,9 @@
   
   
   ### Establish Parameter Sweep
-  numberOfSimulationsPerSetting <- 1
+  numberOfSimulationsPerSetting <- 100
   numberOfTurnsPerSimulation <- 1000
-  NSweep <- c(2, 5)
-  # NSweep <- c(2, 5, 10, 20, 50)
+  NSweep <- c(2, 5, 10, 20, 50)
   NetworkTypeSweep <- c("Complete", "Circle", "Star", "Regular", "Random")
   InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState")
   
