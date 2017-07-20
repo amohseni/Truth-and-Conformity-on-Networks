@@ -1,7 +1,11 @@
-  # TRUTH AND CONFORMITY ON NETWORKS
+  ###########################################################################
+  # TRUTH AND CONFORMITY ON NETWORKS 
   # SIMULATIONS : PARAMETER SWEEP
-  # by Aydin Mohseni & Cole Williams
-  
+  ###########################################################################
+  # Created by: Aydin Mohseni 
+  # Contact: aydin.mohseni@gmail.com
+  # URL: www.aydinmohseni.com
+
   
   ### Install packages
   library(animation)
@@ -13,14 +17,14 @@
   
   
   ### Establish Parameter Sweep
-  numberOfSimulationsPerSetting <- 100
+  numberOfSimulationsPerSetting <- 1000
   numberOfTurnsPerSimulation <- 1000
   NSweep <- c(2, 5, 10, 20, 50)
   NetworkTypeSweep <- c("Complete", "Circle", "Star", "Regular", "Random")
   InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState")
   
-    NetworkDensity <- 0.4 # Network density for random networks
-    regDegree <- (N * 0.4) # Degree for regular networks
+    NetworkDensity <- 0.5 # Network density for random networks
+    regDegree <- 0.5 # Degree for regular networks
 
     
   ### Establish Global Variables
@@ -52,7 +56,7 @@
             selfEdge <- N * c(0:(N-1)) + c(1:N)
             edges <- edges[-selfEdge,]
           }
-          # Cycle graph
+          # Circle graph
           if (NetworkType == "Circle") {
             edges <- data.frame(from = c(1:N), to = c(2:N, 1))
           }
@@ -62,11 +66,15 @@
           }
           # Regular graph
           if (NetworkType == "Regular") {
-            regDegree <- as.numeric(regDegree)/2
-            x <- rep(1:N, each = regDegree)
-            y <- x + 1:regDegree
+            degreeDensity <- round((regDegree * N)/2)
+            if (degreeDensity > 1) {
+            x <- rep(1:N, each = degreeDensity)
+            y <- x + 1:degreeDensity
             y[y > N] <- y[y > N] - N
             edges <- data.frame(from = x, to = y)
+            } else {
+              edges <- data.frame(from = c(1), to = c(2))
+            }
           }
           # Random graph
           if (NetworkType == "Random") {
@@ -106,7 +114,7 @@
           PublicDeclarations <- c() # evolution of public declarations
           
           # Set the true state of the world
-          Theta <- 0 # where state 0 is denoted by Orange, and 1 by Blue
+          Theta <- 1 # where there are two possible states: 0 and 1
           
           
           ### Define Functions

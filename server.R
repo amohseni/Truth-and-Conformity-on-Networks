@@ -42,16 +42,16 @@ shinyServer(function(input, output, session) {
     }
     # Regular graph
     if (input$NetworkType == "Regular") {
-      regDegree <- as.numeric(input$regDegree)/2
-      x <- rep(1:N, each = regDegree)
-      y <- x + 1:regDegree
-      y[y > N] <- y[y > N] - N
-      edges <- data.frame(from = x, to = y)
+        regDegree <- as.numeric(input$regDegree)/2
+        x <- rep(1:N, each = regDegree)
+        y <- x + 1:regDegree
+        y[y > N] <- y[y > N] - N
+        edges <- data.frame(from = x, to = y)  
     }
     # Random graph
     if (input$NetworkType == "Random") {
       numberOfPossibleEdges <- choose(N, 2)
-      numberOfEdges <- numberOfPossibleEdges * as.numeric(input$NetworkDensity) 
+      numberOfEdges <- round(numberOfPossibleEdges * as.numeric(input$NetworkDensity))
       possibleEdges <- data.frame(t(combn(1:N, 2)))
       colnames(possibleEdges) <- c("from", "to")
       randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
