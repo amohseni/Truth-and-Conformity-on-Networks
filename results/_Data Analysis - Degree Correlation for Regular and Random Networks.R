@@ -14,7 +14,7 @@ library(reshape2)
 setwd("/Users/aydin/GitHub/Truth-and-Conformity-on-Networks/results/over varying degrees")
 
 # The number of simulations
-numberOfSimulationsPerSetting <- 10
+numberOfSimulationsPerSetting <- 1000
 N <- 20
 NetworkTypeSweep <- c("Regular", "Random")
 RegDegreeSweep <- seq(0, 1, by = 0.2)
