@@ -19,17 +19,18 @@
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
-  NSweep <- c(2) 
+  NSweep <- c(5) 
   # NSweep <- c(2, 5, 10, 20, 50) # List of poplulation size settings
       numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Random")
+  NetworkTypeSweep <- c("Regular")
   # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
       numberOfNetworkTypes <- length(NetworkTypeSweep)
-  InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState") # List of initial conditions
+  InitialDeclarationsSweep <- c("ConsensusOnFalseState")
+  # InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState") # List of initial conditions
       numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
     NetworkDensity <- 0.4 # Network density for random networks
-    regDegree <- 0.4 # Degree for regular networks
+    regDegree <- 0.4 # Degree (scaled by population size) for regular networks
 
     
   ### Establish global variables
