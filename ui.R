@@ -34,7 +34,7 @@ shinyUI(fluidPage(
        
        selectInput("NetworkType", 
                    "Network Type",
-                   c("Complete", "Circle", "Star", "Regular", "Random"),
+                   c("Complete", "Regular", "Circle", "Star", "Random"),
                    selected = "Complete"
                    ),
        

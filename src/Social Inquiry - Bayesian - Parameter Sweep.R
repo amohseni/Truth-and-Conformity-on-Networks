@@ -16,45 +16,62 @@
   setwd("/Users/aydin/GitHub/Truth-and-Conformity-on-Networks/results")
   
   
-  ### Establish Parameter Sweep
-  numberOfSimulationsPerSetting <- 1000
-  numberOfTurnsPerSimulation <- 1000
-  NSweep <- c(2, 5, 10, 20, 50)
-  NetworkTypeSweep <- c("Complete", "Circle", "Star", "Regular", "Random")
-  InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState")
+  ### Establish parameter sweep settings
+  numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
+  numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
+  NSweep <- c(2) 
+  # NSweep <- c(2, 5, 10, 20, 50) # List of poplulation size settings
+      numberOfPopulationSizes <- length(NSweep)
+  NetworkTypeSweep <- c("Random")
+  # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
+      numberOfNetworkTypes <- length(NetworkTypeSweep)
+  InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState") # List of initial conditions
+      numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
-    NetworkDensity <- 0.5 # Network density for random networks
-    regDegree <- 0.5 # Degree for regular networks
+    NetworkDensity <- 0.4 # Network density for random networks
+    regDegree <- 0.4 # Degree for regular networks
 
     
-  ### Establish Global Variables
+  ### Establish global variables
   
   # Import simulation variables from parameter sweep
   
-  for (m in 1:length(InitialDeclarationsSweep)) {
+  for (i in 1:numberOfInitialConditions) {
     
-    InitialDeclarations <- InitialDeclarationsSweep[m] # Initial declarations  
+    InitialDeclarations <- InitialDeclarationsSweep[i] # Set initial declarations  
     
-    for (j in 1:length(NetworkTypeSweep)) {
+    for (j in 1:numberOfNetworkTypes) {
       
-      NetworkType <- NetworkTypeSweep[j] # Network type
+      NetworkType <- NetworkTypeSweep[j] # Set network type
       
-      for (k in 1:length(NSweep)) {
+      for (k in 1:numberOfPopulationSizes) {
         
-        N <- NSweep[k] # Number of agents
-        Duration <- ( numberOfTurnsPerSimulation / N ) # Number of rounds of play
+        N <- NSweep[k] # Set number of agents
+        Duration <- ( numberOfTurnsPerSimulation / N ) # Set number of rounds of play
         
         ### Create data frames in which to store the results of each simulation
         DeclarationDF <- data.frame(matrix(data = NA, nrow = numberOfSimulationsPerSetting, ncol = numberOfTurnsPerSimulation))
         BeliefDF <- data.frame(matrix(data = NA, nrow = numberOfSimulationsPerSetting, ncol = numberOfTurnsPerSimulation))
         
-        for (l in 1:numberOfSimulationsPerSetting) {
+        for (l in 1:numberOfSimulationsPerSetting) { # Simulation count
 
           # Complete graph
           if (NetworkType == "Complete") { 
             edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
             selfEdge <- N * c(0:(N-1)) + c(1:N)
             edges <- edges[-selfEdge,]
+          }
+          # Regular graph
+          if (NetworkType == "Regular") {
+            degreeDensity <- round((regDegree * N)/2)
+            if (degreeDensity >= 1) {
+              x <- rep(1:N, each = degreeDensity)
+              y <- x + 1:degreeDensity
+              y[y > N] <- y[y > N] - N
+              edges <- data.frame(from = x, to = y)
+            } else {
+              edges <- data.frame(from = c(1), to = c(2))
+            }
           }
           # Circle graph
           if (NetworkType == "Circle") {
@@ -64,22 +81,10 @@
           if (NetworkType == "Star") {
             edges <- data.frame(from = rep(1, N-1), to = 2:N)
           }
-          # Regular graph
-          if (NetworkType == "Regular") {
-            degreeDensity <- round((regDegree * N)/2)
-            if (degreeDensity > 1) {
-            x <- rep(1:N, each = degreeDensity)
-            y <- x + 1:degreeDensity
-            y[y > N] <- y[y > N] - N
-            edges <- data.frame(from = x, to = y)
-            } else {
-              edges <- data.frame(from = c(1), to = c(2))
-            }
-          }
           # Random graph
           if (NetworkType == "Random") {
             numberOfPossibleEdges <- choose(N, 2)
-            numberOfEdges <- numberOfPossibleEdges * NetworkDensity
+            numberOfEdges <- ceiling(numberOfPossibleEdges * NetworkDensity)
             possibleEdges <- data.frame(t(combn(1:N, 2)))
             colnames(possibleEdges) <- c("from", "to")
             randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
@@ -88,27 +93,35 @@
           
           # (Adjacency) matrix of the neighbors for each player (node)
           adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
-          for (i in 1:N) {
-            d <- subset(edges, from == i | to == i)
-            if ( nrow(d)!=0 ) { d <- unique(d[d != i]) } else { d <- c() }
-            adjacencyMatrix[i,] <- c(d, rep(NA, N-1-length(d)))
+          for (m in 1:N) {
+            adjMatSub <- subset(edges, from == m | to == m)
+            if ( nrow(adjMatSub) != 0 ) { 
+              adjMatSub <- unique(adjMatSub[adjMatSub != m]) 
+            } else { 
+              adjMatSub <- c() 
+            }
+            adjacencyMatrix[m, ] <- c(adjMatSub, rep(NA, N - 1 - length(adjMatSub)))
           }
           
-          # NetworkChoices <- rep(0, N) # (consensus on false belief) intial vector of network choices
+          # Initial declarations of agents:
+          # Uniformly at random
           if (InitialDeclarations == "UniformlyAtRandom") {
             NetworkChoices <- rbinom(N, 1, .5) 
           }
+          # Consensus on false state
           if (InitialDeclarations == "ConsensusOnFalseState") {
             NetworkChoices <- rep(0, N)
           }
           
-          HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
-          HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
+          # Create new history of play matrix
+          HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) 
+          # Save the initial conditions in the first row of history of play
+          HistoryOfPlay[1,] <- NetworkChoices 
           
           # Create the population types and initial beliefs
           Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
-          # where α_i denotes the truth-seeking orientation of agent i
-          # and (1 - α_i) denotes her coordination orientation
+            # where α_i denotes the truth-seeking orientation of agent i
+            # and (1 - α_i) denotes her coordination orientation
           Prior <- c(0.5) # initial ignorance prior for all agents
           PublicBelief <- c() # evolution of public belief
           PublicDeclarations <- c() # evolution of public declarations
@@ -212,31 +225,49 @@
           
           # Define the PUBLIC PRIOR function,
           # whereby all players update their beliefs 
-          # based on the declaration of the focal player
+          # based on the declaration z of the focal individual i
           PublicPrior <- function(i, z) {
             
             # Retrieve the relevant parameters
             Pr <-  Prior
             Ns <-  CoordinationPayoff(i, z)
             
-            # Then, compute the likelihood P(z|Theta) of her action given the state Theta
-            fTheta <- function(a) {
-              (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
-            }
-            if (Ns > .5) {
-              L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
-            } else {
-              L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+            # Check if agent has no neighbors—is "isolated"
+            # (and hence has no coordination payoff component determining her declaration)
+            Neighbors <- adjacencyMatrix[i,]
+            Neighbors <- Neighbors[!is.na(Neighbors)]
+            Isolated  <- ( length(Neighbors) == 0 )
+            
+            if (Isolated == FALSE ) {
+              # Then, compute the likelihood P(z|Theta) of her action given the state Theta
+              fTheta <- function(a) {
+                (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
+              }
+              if (Ns > .5) {
+                L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
+              } else {
+                L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+              }
+              
+              # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
+              fNotTheta <- function(a) {
+                (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
+              }
+              if (Ns > .5) {
+                L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
+              } else {
+                L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+              }
             }
             
-            # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
-            fNotTheta <- function(a) {
-              (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
-            }
-            if (Ns > .5) {
-              L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
-            } else {
-              L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+            # If the focal agent i is isolated, then calculating the likelihood of 
+            if (Isolated == TRUE ) {
+              fTheta <- function(a) { 2*a }
+              fNotTheta <- function(a) { 2 - 2*a }
+              # Compute the likelihood P(z|Theta) of her action given the state Theta
+              L1 <- integrate(fTheta, lower = (1-Pr), upper = 1)[[1]]
+              # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
+              L0 <- integrate(fNotTheta, lower = (1-Pr), upper = 1)[[1]]
             }
             
             # print("LIKELIHOOD L1 of declaration given Theta: 1")
@@ -274,27 +305,27 @@
             # Generate the round's random order of play
             agentIndex <- sample(1:N, N, replace = FALSE)
             
-            for(i in 1:N) {
-              # Have agent i get her private signal S about the state of the world
+            for(n in 1:N) {
+              # Have agent n get her private signal S about the state of the world
               S <- Signal()
               
-              # Have agent i update her belief about the state of the world, 
+              # Have agent n update her belief about the state of the world, 
               # calculate her current coordination payoff based on the declarations of  
               # and choose how to act.
               # That is, choose which social policy to DECLARE
-              z <- BR(agentIndex[i], S)
+              z <- BR(agentIndex[n], S)
               
-              # Update the public prior, given the declaration of agent i
-              Prior <- PublicPrior(agentIndex[i], z)
+              # Update the public prior, given the declaration of agent n
+              Prior <- PublicPrior(agentIndex[n], z)
               # Update the history of belief
               PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
               
               # Update the vector of current network choices
               # with the agent's DECLARATION z
-              NetworkChoices[agentIndex[i]] <- z
+              NetworkChoices[agentIndex[n]] <- z
               
               # Update the history of play for the round
-              HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
+              HistoryOfPlay[(N*(t-1) + n) + 1, ] <- NetworkChoices
               
               # Record the proportion of players declaring Theta
               PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
@@ -317,8 +348,16 @@
         }
         
         ### Print the saved results of the simulations
-        write.csv(DeclarationDF, file = paste("results.Declarations.NetworkType=",NetworkTypeSweep[j],".N=",NSweep[k],".Init=",InitialDeclarationsSweep[m],".Runs=",numberOfSimulationsPerSetting,".csv",sep=""))
-        write.csv(BeliefDF, file = paste("results.Beliefs.NetworkType=",NetworkTypeSweep[j],".N=",NSweep[k],".Init=",InitialDeclarationsSweep[m],".Runs=",numberOfSimulationsPerSetting,".csv",sep=""))
+        # Note: If population size digit is a single digit number (i.e., N<10)
+        # then add a zero before it in the file name (i.e., N=0N), 
+        # to have proper file order sorting when importing for data analysis
+        if (NSweep[k] < 10) {
+          write.csv(DeclarationDF, file = paste("results.Declarations.NetworkType=", NetworkTypeSweep[j],".N=0", NSweep[k],".Init=", InitialDeclarationsSweep[i],".Runs=", numberOfSimulationsPerSetting, ".csv", sep=""))
+          write.csv(BeliefDF, file = paste("results.Beliefs.NetworkType=", NetworkTypeSweep[j],".N=0", NSweep[k],".Init=", InitialDeclarationsSweep[i],".Runs=", numberOfSimulationsPerSetting, ".csv", sep=""))
+        } else {
+          write.csv(DeclarationDF, file = paste("results.Declarations.NetworkType=", NetworkTypeSweep[j],".N=", NSweep[k],".Init=", InitialDeclarationsSweep[i],".Runs=", numberOfSimulationsPerSetting, ".csv", sep=""))
+          write.csv(BeliefDF, file = paste("results.Beliefs.NetworkType=", NetworkTypeSweep[j],".N=", NSweep[k],".Init=", InitialDeclarationsSweep[i],".Runs=", numberOfSimulationsPerSetting, ".csv", sep=""))
+        }
       }
     }
   }

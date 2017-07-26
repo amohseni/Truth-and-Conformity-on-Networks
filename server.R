@@ -31,7 +31,15 @@ shinyServer(function(input, output, session) {
       edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
       selfEdge <- N * c(0:(N-1)) + c(1:N)
       edges <- edges[-selfEdge,]
-      }
+    }
+    # Regular graph
+    if (input$NetworkType == "Regular") {
+      regDegree <- as.numeric(input$regDegree)/2
+      x <- rep(1:N, each = regDegree)
+      y <- x + 1:regDegree
+      y[y > N] <- y[y > N] - N
+      edges <- data.frame(from = x, to = y)  
+    }
     # Cycle graph
     if (input$NetworkType == "Circle") {
       edges <- data.frame(from = c(1:N), to = c(2:N, 1))
@@ -40,18 +48,10 @@ shinyServer(function(input, output, session) {
     if (input$NetworkType == "Star") {
       edges <- data.frame(from = rep(1, N-1), to = 2:N)
     }
-    # Regular graph
-    if (input$NetworkType == "Regular") {
-        regDegree <- as.numeric(input$regDegree)/2
-        x <- rep(1:N, each = regDegree)
-        y <- x + 1:regDegree
-        y[y > N] <- y[y > N] - N
-        edges <- data.frame(from = x, to = y)  
-    }
     # Random graph
     if (input$NetworkType == "Random") {
       numberOfPossibleEdges <- choose(N, 2)
-      numberOfEdges <- round(numberOfPossibleEdges * as.numeric(input$NetworkDensity))
+      numberOfEdges <- ceiling(numberOfPossibleEdges * as.numeric(input$NetworkDensity))
       possibleEdges <- data.frame(t(combn(1:N, 2)))
       colnames(possibleEdges) <- c("from", "to")
       randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
@@ -198,24 +198,40 @@ shinyServer(function(input, output, session) {
       Pr <-  Prior
       Ns <-  CoordinationPayoff(i, z)
       
-      # Then, compute the likelihood P(z|Theta) of her action given the state Theta
-      fTheta <- function(a) {
-        (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
-      }
-      if (Ns > .5) {
-        L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
-      } else {
-        L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+      # Check if agent is isolated (has no coordination payoff)
+      Neighbors <- adjacencyMatrix[i,]
+      Neighbors <- Neighbors[!is.na(Neighbors)]
+      Isolated  <- ( length(Neighbors) == 0 )
+      
+      if (Isolated == FALSE ) {
+        # Then, compute the likelihood P(z|Theta) of her action given the state Theta
+        fTheta <- function(a) {
+          (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
+        }
+        if (Ns > .5) {
+          L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
+        } else {
+          L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+        }
+        
+        # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
+        fNotTheta <- function(a) {
+          (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
+        }
+        if (Ns > .5) {
+          L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
+        } else {
+          L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+        }
       }
       
-      # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
-      fNotTheta <- function(a) {
-        (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
-      }
-      if (Ns > .5) {
-        L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
-      } else {
-        L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+      if (Isolated == TRUE ) {
+        fTheta <- function(a) { 2*a }
+        fNotTheta <- function(a) { 2 - 2*a }
+        # Compute the likelihood P(z|Theta) of her action given the state Theta
+        L1 <- integrate(fTheta, lower = (1-Pr), upper = 1)[[1]]
+        # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
+        L0 <- integrate(fNotTheta, lower = (1-Pr), upper = 1)[[1]]
       }
       
       # print("LIKELIHOOD L1 of declaration given Theta: 1")
@@ -358,14 +374,13 @@ shinyServer(function(input, output, session) {
         labs(x = "Time", y = "Proportion") +
         theme_bw() +
         scale_y_continuous(breaks = seq(0, 1, .25)) +
+        scale_color_manual(values=c("orange2", "dimgray")) +
         theme(legend.position = "bottom",
               legend.title = element_blank(),
               plot.title = element_text(hjust = 0.5),
               text = element_text(size = 16),
               legend.text = element_text(size = 14)
-              ) +
-        scale_color_manual(values=c("orange2", "dimgray")) +
-        ylim(0, 1)
+              )
       p
       
     }, height = 600, width = 600)
