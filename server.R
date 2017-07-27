@@ -40,7 +40,7 @@ shinyServer(function(input, output, session) {
       y[y > N] <- y[y > N] - N
       edges <- data.frame(from = x, to = y)  
     }
-    # Cycle graph
+    # Circle graph
     if (input$NetworkType == "Circle") {
       edges <- data.frame(from = c(1:N), to = c(2:N, 1))
     }
@@ -60,10 +60,10 @@ shinyServer(function(input, output, session) {
     
     # (Adjacency) matrix of the neighbors for each player (node)
     adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
-    for (i in 1:N) {
-      d <- subset(edges, from == i | to == i)
-      if ( nrow(d)!=0 ) { d <- unique(d[d != i]) } else { d <- c() }
-      adjacencyMatrix[i,] <- c(d, rep(NA, N-1-length(d)))
+    for (m in 1:N) {
+      d <- subset(edges, from == m | to == m)
+      if ( nrow(d)!=0 ) { d <- unique(d[d != m]) } else { d <- c() }
+      adjacencyMatrix[m,] <- c(d, rep(NA, N-1-length(d)))
     }
     
     # Initial declarations

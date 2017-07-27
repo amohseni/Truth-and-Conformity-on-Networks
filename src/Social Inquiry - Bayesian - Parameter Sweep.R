@@ -19,18 +19,17 @@
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
-  NSweep <- c(5) 
-  # NSweep <- c(2, 5, 10, 20, 50) # List of poplulation size settings
-      numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Regular")
+  NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
+  numberOfPopulationSizes <- length(NSweep)
+  NetworkTypeSweep <- c("Complete", "Circle") # List of network types
   # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
-      numberOfNetworkTypes <- length(NetworkTypeSweep)
-  InitialDeclarationsSweep <- c("ConsensusOnFalseState")
+  numberOfNetworkTypes <- length(NetworkTypeSweep)
+  InitialDeclarationsSweep <- c("EvenSplit") # List of initial conditions                                     
   # InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState") # List of initial conditions
-      numberOfInitialConditions <- length(InitialDeclarationsSweep)
+  numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
-    NetworkDensity <- 0.4 # Network density for random networks
-    regDegree <- 0.4 # Degree (scaled by population size) for regular networks
+  NetworkDensity <- 0.4 # Network density for random networks
+  regDegree <- 0.4 # Degree (scaled by population size) for regular networks
 
     
   ### Establish global variables
@@ -99,7 +98,7 @@
             if ( nrow(adjMatSub) != 0 ) { 
               adjMatSub <- unique(adjMatSub[adjMatSub != m]) 
             } else { 
-              adjMatSub <- c() 
+              adjMatSub <- c()
             }
             adjacencyMatrix[m, ] <- c(adjMatSub, rep(NA, N - 1 - length(adjMatSub)))
           }
@@ -107,17 +106,20 @@
           # Initial declarations of agents:
           # Uniformly at random
           if (InitialDeclarations == "UniformlyAtRandom") {
-            NetworkChoices <- rbinom(N, 1, .5) 
+            NetworkChoices <- rbinom(N, 1, .5)
           }
           # Consensus on false state
           if (InitialDeclarations == "ConsensusOnFalseState") {
             NetworkChoices <- rep(0, N)
           }
+          if (InitialDeclarations == "EvenSplit") {
+            NetworkChoices <- sample(c(rep(1, N/2), rep(0, N/2)))
+          }
           
           # Create new history of play matrix
-          HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) 
+          HistoryOfPlay <- matrix(NA, nrow = (N * Duration + 1), ncol = N) 
           # Save the initial conditions in the first row of history of play
-          HistoryOfPlay[1,] <- NetworkChoices 
+          HistoryOfPlay[1, ] <- NetworkChoices 
           
           # Create the population types and initial beliefs
           Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
@@ -150,21 +152,21 @@
           # by an agent about the true state of the world
           Signal <- function(x) { 
             # Draw a realization from the uniform distribution
-            S <- array(runif (1, min = 0, max = 1), 1) 
+            U <- array(runif(1, min = 0, max = 1), 1) 
             # and apply the correct distribution transformation, depending on the state of the world Theta
-            ifelse(Theta == 0, w <- apply(S , 1 , FUN = F0_inverse), w <- apply(S , 1 , FUN = F1_inverse))
-            return(w)
+            ifelse(Theta == 0, z <- apply(U , 1 , FUN = F0_inverse), z <- apply(U , 1 , FUN = F1_inverse))
+            return(z)
           }
           
           # Define the CREDENCE function for player i for choice C
-          # using Bayes' rule, as Pr(C|D) = Pr(D|C)Pr(C)/Pr(D)
-          # That is, the poster probability of the truth of C, 
-          # given the product of the likelihood of the datat D given C, 
-          # over the total probability of D
-          Credence <- function(i, C, S) {
+          # using Bayes' rule, as Pr(Theta|S) = Pr(S|Theta)Pr(Theta)/Pr(S)
+          # That is, the poster probability of the truth of Theta, 
+          # given the product of the likelihood of the signal S given Theta, 
+          # over the total probability of S
+          Credence <- function(i, State, S) {
             x <- (1 + ( ( 1 - Prior ) / Prior ) * ( (1 - S) / S ) ) ^ -1
-            z <- ifelse( C == 1, x, (1 - x) )
-            # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
+            z <- ifelse( State == 1, x, (1 - x) )
+            # print(paste("Player", i, "POSTERIOR PROBABILITY for state", State, sep = " "))
             # print(z)
             return(z)
           }
@@ -233,7 +235,7 @@
             Pr <-  Prior
             Ns <-  CoordinationPayoff(i, z)
             
-            # Check if agent has no neighbors—is "isolated"
+            # Check if agent has no neighbors---i.e., is "isolated"
             # (and hence has no coordination payoff component determining her declaration)
             Neighbors <- adjacencyMatrix[i,]
             Neighbors <- Neighbors[!is.na(Neighbors)]
@@ -279,17 +281,16 @@
             # print(L0)
             
             # Compute P(Theta|z) or P(Theta|¬z)
-            w <- (1+((1-Prior)/Prior)*(L0/L1))^-1
+            z <- (1 + ((1 - Prior) / Prior)*(L0 / L1)) ^ -1
             # print("POSTERIOR/PUBLIC BELIEF")
             # print(w)
-            return(w)
+            return(z)
           }
           
           #### Initialize Simulation
           
-          # Nature randomly chooses the state of the world as either 0 or 1,
-          # which determines the corresponding pdfs f1, or F0
-          # Theta <- rbinom(1, 1, prob = 0.5) + 1
+          # Nature chooses the state of the world as either 0 or 1,
+          # which determines the corresponding pdfs f1, or f0
           # print(paste("The true state of the world is", Theta , sep = ))
           # print(Theta)
           
@@ -307,23 +308,29 @@
             agentIndex <- sample(1:N, N, replace = FALSE)
             
             for(n in 1:N) {
-              # Have agent n get her private signal S about the state of the world
+              # Determine which player is the focal player
+              # who will receive a signal from nature,
+              # and make her public declaration
+              FocalAgent <- agentIndex[n]
+              
+              # Have the focal agent n get her private signal S about the state of the world
               S <- Signal()
               
               # Have agent n update her belief about the state of the world, 
               # calculate her current coordination payoff based on the declarations of  
               # and choose how to act.
               # That is, choose which social policy to DECLARE
-              z <- BR(agentIndex[n], S)
+              DeclarationOfFocalAgent <- BR(FocalAgent, S)
               
               # Update the public prior, given the declaration of agent n
-              Prior <- PublicPrior(agentIndex[n], z)
+              Prior <- PublicPrior(FocalAgent, DeclarationOfFocalAgent)
+              
               # Update the history of belief
               PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
               
               # Update the vector of current network choices
               # with the agent's DECLARATION z
-              NetworkChoices[agentIndex[n]] <- z
+              NetworkChoices[FocalAgent] <- DeclarationOfFocalAgent
               
               # Update the history of play for the round
               HistoryOfPlay[(N*(t-1) + n) + 1, ] <- NetworkChoices
@@ -363,7 +370,3 @@
     }
   }
   
-   
-    
-  
-    
