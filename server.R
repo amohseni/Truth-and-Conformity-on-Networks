@@ -206,7 +206,7 @@ shinyServer(function(input, output, session) {
       if (Isolated == FALSE ) {
         # Then, compute the likelihood P(z|Theta) of her action given the state Theta
         fTheta <- function(a) {
-          (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))^2))
+          (1 - (1 / (1 + ((Pr / (1 - Pr)) * (((((1 - a) * (1-2 * Ns) / (2 * a)) + (1 / 2))^-1) - 1)))^2))
         }
         if (Ns > .5) {
           L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
@@ -216,7 +216,7 @@ shinyServer(function(input, output, session) {
         
         # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
         fNotTheta <- function(a) {
-          (1-(1/(1+((Pr/(1-Pr))*(((((1-a)*(1-2*Ns)/(2*a))+(1/2))^-1)-1)))))
+          (1 - (1/(1 + ((Pr / (1 - Pr)) * (((((1-a) * (1-2*Ns) / (2*a)) + (1/2))^-1) - 1)))))
         }
         if (Ns > .5) {
           L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
@@ -274,6 +274,11 @@ shinyServer(function(input, output, session) {
         if (t == 1) { Prior <- c(0.5) }
         
         for(i in 1:N) {
+          # Determine which agent is the focal player
+          # who will now receive a signal from nature,
+          # and make her public declaration
+          FocalAgent <- agentIndex[n]
+          
           # Have agent i get her private signal S about the state of the world
           S <- Signal()
   
@@ -281,22 +286,25 @@ shinyServer(function(input, output, session) {
           # calculate her current coordination payoff based on the declarations of
           # and choose how to act.
           # That is, choose which social policy to DECLARE
-          z <- BR(agentIndex[i], S)
+          DeclarationOfFocalAgent <- BR(FocalAgent, S)
   
           # Update the public prior, given the declaration of agent i
-          Prior <- PublicPrior(agentIndex[i], z)
+          Prior <- PublicPrior(FocalAgent, DeclarationOfFocalAgent)
           # Update the history of belief
           PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
   
           # Update the vector of current network choices
           # with the agent's DECLARATION z
-          NetworkChoices[agentIndex[i]] <- z
+          NetworkChoices[FocalAgent] <- DeclarationOfFocalAgent
   
           # Update the history of play for the round
-          HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
+          HistoryOfPlay[(N * (t - 1) + i) + 1, ] <- NetworkChoices
   
           # Record the proportion of players declaring Theta
-          PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
+          PublicDeclarations <-
+            append(PublicDeclarations,
+                   table(factor(NetworkChoices, c(0, 1)))[[2]] / N,
+                   after = length(PublicDeclarations))
         }
   
         # Print the history of play
