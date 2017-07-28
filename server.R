@@ -277,7 +277,7 @@ shinyServer(function(input, output, session) {
           # Determine which agent is the focal player
           # who will now receive a signal from nature,
           # and make her public declaration
-          FocalAgent <- agentIndex[n]
+          FocalAgent <- agentIndex[i]
           
           # Have agent i get her private signal S about the state of the world
           S <- Signal()
