@@ -86,7 +86,7 @@ shinyServer(function(input, output, session) {
     # and (1 - α_i) denotes her coordination orientation,
     # so the population type vector is given by α=(α_1,...,α_N)
     if (input$TypeDistribution == "All Truth-Seeking") { Alpha <- rep(1, N) }
-    if (input$TypeDistribution == "Heterogeneous") { Alpha <- rbeta(N, input$TypeAlpha, input$TypeBeta) }
+    if (input$TypeDistribution == "Heterogeneous") { Alpha <- rbeta(N, 1, 1) }
     if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
     
     # Set the population initial belief
@@ -381,7 +381,7 @@ shinyServer(function(input, output, session) {
         ggtitle("Public belief in the true state, and its declaration, over time") +
         labs(x = "Time", y = "Proportion") +
         theme_bw() +
-        scale_y_continuous(breaks = seq(0, 1, .25)) +
+        scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
         scale_color_manual(values=c("orange2", "dimgray")) +
         theme(legend.position = "bottom",
               legend.title = element_blank(),
@@ -391,34 +391,34 @@ shinyServer(function(input, output, session) {
               )
       p
       
-    }, height = 600, width = 600)
+    }, height = 550, width = 550)
     
     # Outplut plot for left input panel 
     # of the distribution of truth-seeking vs.conformist types
-    output$TypeDistributionPlot <- renderPlot({
- 
-      if (input$TypeDistribution == "Heterogeneous") {
-        alpha1 <- input$TypeAlpha
-        beta2 <- input$TypeBeta
-        x <- seq(0, 1, length=100)
-        y <- dbeta(x, alpha1, beta2)
-        dat <- data.frame(x, y)
-        colnames(dat) <- c("x", "y")
-        
-        ggplot(data=dat, aes(x=x, y=y)) +
-          geom_area(colour="dimgray", fill="dimgray") +
-          labs(x = NULL, y = NULL) +
-          ylim(low = 0, high = 5) +
-          theme_bw() +
-          scale_x_continuous(minor_breaks = seq(1, 5, .5)) +
-          theme(axis.ticks = element_blank(),
-                axis.text = element_blank(),
-                axis.title = element_text(size = 14),
-                panel.border = element_blank()
-          )
-      }
-      
-    })
+    # output$TypeDistributionPlot <- renderPlot({
+    # 
+    #   if (input$TypeDistribution == "Heterogeneous") {
+    #     alpha1 <- input$TypeAlpha
+    #     beta2 <- input$TypeBeta
+    #     x <- seq(0, 1, length=100)
+    #     y <- dbeta(x, alpha1, beta2)
+    #     dat <- data.frame(x, y)
+    #     colnames(dat) <- c("x", "y")
+    #     
+    #     ggplot(data=dat, aes(x=x, y=y)) +
+    #       geom_area(colour="dimgray", fill="dimgray") +
+    #       labs(x = NULL, y = NULL) +
+    #       ylim(low = 0, high = 5) +
+    #       theme_bw() +
+    #       scale_x_continuous(minor_breaks = seq(1, 5, .5)) +
+    #       theme(axis.ticks = element_blank(),
+    #             axis.text = element_blank(),
+    #             axis.title = element_text(size = 14),
+    #             panel.border = element_blank()
+    #       )
+    #   }
+    #   
+    # })
     
     ### Update interface based on inputs from other interface inputs
     

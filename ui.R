@@ -24,6 +24,9 @@ shinyUI(fluidPage(
   # Sidebar with a slider input for number of bins 
   sidebarLayout(
     sidebarPanel(
+      
+      width = 3,
+      
        sliderInput("Players",
                    "Number of Players:",
                    min = 2,
@@ -84,38 +87,38 @@ shinyUI(fluidPage(
                    selected = "Heterogeneous"
        ),
        
-       # Only show this panel only if MIXED is selected in TYPE DISTRIBUTION
-       conditionalPanel(
-         condition = "input.TypeDistribution == 'Heterogeneous'",
-         
-         style='margin-bottom:100px;',
-         align = "center",
-         
-         column(width = 6, 
-            sliderInput("TypeAlpha", 
-                        "Truth-Seeking", 
-                        min = 0 , 
-                        max = 5, 
-                        value = 3,
-                        step = .2,
-                        ticks = FALSE
-            )
-         ),
-                
-         column(width = 6, 
-            sliderInput("TypeBeta", 
-                        "Conformist", 
-                        min = 0 , 
-                        max = 5, 
-                        value = 3,
-                        step = .2,
-                        ticks = FALSE
-            )
-         ),
-         
-         plotOutput(outputId = "TypeDistributionPlot", width = "90%", height = "120px")
-         
-       ),
+       # # Only show this panel only if MIXED is selected in TYPE DISTRIBUTION
+       # conditionalPanel(
+       #   condition = "input.TypeDistribution == 'Heterogeneous'",
+       #   
+       #   style='margin-bottom:100px;',
+       #   align = "center",
+       #   
+       #   column(width = 6, 
+       #      sliderInput("TypeAlpha", 
+       #                  "Truth-Seeking", 
+       #                  min = 0 , 
+       #                  max = 5, 
+       #                  value = 3,
+       #                  step = .2,
+       #                  ticks = FALSE
+       #      )
+       #   ),
+       #          
+       #   column(width = 6, 
+       #      sliderInput("TypeBeta", 
+       #                  "Conformist", 
+       #                  min = 0 , 
+       #                  max = 5, 
+       #                  value = 3,
+       #                  step = .2,
+       #                  ticks = FALSE
+       #      )
+       #   ),
+       #   
+       #   plotOutput(outputId = "TypeDistributionPlot", width = "90%", height = "120px")
+       #   
+       # ),
 
        tags$style(type = "text/css", ".irs-grid-pol.small {height: 0px;}"),       
        
@@ -123,7 +126,7 @@ shinyUI(fluidPage(
                    "Full Rounds of Play:",
                    min = 1,
                    max = 10,
-                   value = 2,
+                   value = 3,
                    step = 1
                    ),
        
@@ -137,8 +140,6 @@ shinyUI(fluidPage(
       tabsetPanel(type = "tabs", 
                   tabPanel("Network Animation", 
                            
-                           align = "center",
-                           
                            fluidRow(
                              
                              style='margin-top: 20px;',
@@ -149,7 +150,7 @@ shinyUI(fluidPage(
                            
                            fluidRow(
                              
-                             style='margin-top: 140px;',
+                             style='margin-top: 140px; margin-left: 150px;',
                              
                              sliderInput("simulationStep", NULL, 
                                        min = 0, 
