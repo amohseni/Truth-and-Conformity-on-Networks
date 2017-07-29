@@ -15,7 +15,7 @@
   setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/from even split")
   
   # The number of simulations
-  numberOfSimulationsPerSetting <- 1000
+  numberOfSimulationsPerSetting <- 100
   NSweep <- c(2, 4, 10, 20, 50)
   n <- length(NSweep)
   NetworkTypeSweep <- c("Circle", "Complete", "Random", "Regular", "Star")
@@ -61,7 +61,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Belief in True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Belief") +
-    scale_y_continuous(limits = c(.5, .92)) +
+    # scale_y_continuous(limits = c(.5, .92)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
   # Declaration line plot
@@ -70,7 +70,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Declaration of True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Declaration") +
-    scale_y_continuous(limits = c(.5, .92)) +
+    # scale_y_continuous(limits = c(.5, .92)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
     

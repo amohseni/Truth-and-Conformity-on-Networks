@@ -199,7 +199,7 @@
             EUvector <- c( EU(i, 0, S), EU(i, 1, S) )
             # If the payoffs are not tied, choose the declaration with the highest payoff
             if ( EUvector[1] != EUvector[2] ) {
-              z <- which.max(c( EU(i, 0, S), EU(i, 1, S) )) - 1
+              z <- which.max( EUvector ) - 1
             } else { # If there is a payoff tie, choose a declaration at random 
               z <- sample(c(1,0), 1, .5)
             }

@@ -21,7 +21,7 @@
   numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
   NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Circle") # List of network types
+  NetworkTypeSweep <- c("Complete") # List of network types
   # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
   InitialDeclarationsSweep <- c("EvenSplit") # List of initial conditions                                     
@@ -217,7 +217,7 @@
             EUvector <- c( EU(i, 0, S), EU(i, 1, S) )
             # If the payoffs are not tied, choose the declaration with the highest payoff
             if ( EUvector[1] != EUvector[2] ) {
-              z <- which.max(c( EU(i, 0, S), EU(i, 1, S) )) - 1
+              z <- which.max( EUvector ) - 1
             } else { # If there is a payoff tie, choose a declaration at random 
               z <- sample(c(1,0), 1, .5)
             }
@@ -241,7 +241,7 @@
             
             # Retrieve the relevant parameters
             Pr <-  Prior
-            Ns <-  CoordinationPayoff(i, z)
+            Ns <-  CoordinationPayoff(i, 1)
             
             # Check if agent has no neighbors---i.e., is "isolated"
             # (and hence has no coordination payoff component determining her declaration)
@@ -294,6 +294,7 @@
             # print(w)
             return(z)
           }
+          
           
           #### Initialize Simulation
           

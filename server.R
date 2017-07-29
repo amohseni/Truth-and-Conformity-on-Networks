@@ -207,7 +207,7 @@ shinyServer(function(input, output, session) {
       
       # Retrieve the relevant parameters
       Pr <-  Prior
-      Ns <-  CoordinationPayoff(i, z)
+      Ns <-  CoordinationPayoff(i, 1)
       
       # Check if agent is isolated (has no coordination payoff)
       Neighbors <- adjacencyMatrix[i,]
