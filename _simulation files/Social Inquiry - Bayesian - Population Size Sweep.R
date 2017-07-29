@@ -1,6 +1,6 @@
   ###########################################################################
   # TRUTH AND CONFORMITY ON NETWORKS 
-  # SIMULATIONS : PARAMETER SWEEP
+  # SIMULATIONS : PARAMETER SWEEP — POPULATION SIZES
   ###########################################################################
   # Created by: Aydin Mohseni 
   # Contact: aydin.mohseni@gmail.com
@@ -19,8 +19,7 @@
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
-  NSweep <- c(50) # List of poplulation size settings
-  # NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
+  NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
   NetworkTypeSweep <- c("Circle") # List of network types
   # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
@@ -126,7 +125,7 @@
           Alpha <- rbeta(N, 1, 1) # Vector of agent types α=(α_1,...,α_N) 
             # where α_i denotes the truth-seeking orientation of agent i
             # and (1 - α_i) denotes her coordination orientation
-          Prior <- c(0.5) # initial ignorance prior for all agents
+          Prior <- InitialPrior <- c(0.5) # initial ignorance prior for all agents
           PublicBelief <- c() # evolution of public belief
           PublicDeclarations <- c() # evolution of public declarations
           
@@ -214,7 +213,15 @@
             # print(Alpha[i])
             # print(paste("Player", i, "SIGNAL", sep = " "))
             # print(S)
-            z <- which.max( c( EU(i, 0, S), EU(i, 1, S) ) ) - 1
+            
+            EUvector <- c( EU(i, 0, S), EU(i, 1, S) )
+            # If the payoffs are not tied, choose the declaration with the highest payoff
+            if ( EUvector[1] != EUvector[2] ) {
+              z <- which.max(c( EU(i, 0, S), EU(i, 1, S) )) - 1
+            } else { # If there is a payoff tie, choose a declaration at random 
+              z <- sample(c(1,0), 1, .5)
+            }
+            
             # print(paste("Player", i, "BEST RESPONSE", sep = " "))
             # print(z)
             # print("------------------------------")
@@ -269,9 +276,9 @@
               fTheta <- function(a) { 2*a }
               fNotTheta <- function(a) { 2 - 2*a }
               # Compute the likelihood P(z|Theta) of her action given the state Theta
-              L1 <- integrate(fTheta, lower = (1-Pr), upper = 1)[[1]]
+              L1 <- integrate(fTheta, lower = (1 - Pr), upper = 1)[[1]]
               # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
-              L0 <- integrate(fNotTheta, lower = (1-Pr), upper = 1)[[1]]
+              L0 <- integrate(fNotTheta, lower = (1 - Pr), upper = 1)[[1]]
             }
             
             # print("LIKELIHOOD L1 of declaration given Theta: 1")
@@ -304,6 +311,9 @@
             
             # print("------------------------------")
             # print(paste("ROUND", t, sep = ))
+            
+            # Set initial ignorance prior for all agents
+            if (t == 1) { Prior <- InitialPrior }
             
             # Generate the round's random order of play
             agentIndex <- sample(1:N, N, replace = FALSE)

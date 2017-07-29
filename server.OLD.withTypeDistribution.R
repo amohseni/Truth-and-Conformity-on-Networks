@@ -90,10 +90,9 @@ shinyServer(function(input, output, session) {
     if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
     
     # Set the population initial belief
-    Prior <- InitialPrior <- c(0.5) # initial ignorance prior for all agents
-    PublicBelief <- c(InitialPrior) # evolution of public belief vector, starting with initial prior
-    InitialProportionTrueStateDeclaration <- table(factor(NetworkChoices, c(0, 1)))[[2]] / N
-    PublicDeclarations <- c(InitialProportionTrueStateDeclaration) # evolution of public declarations, starting with initial proportions
+    Prior <- c(0.5) # initial ignorance prior for all agents
+    PublicBelief <- c() # evolution of public belief
+    PublicDeclarations <- c() # evolution of public declarations
     
     # Set the true state of the world
     Theta <- 1 # where state 0 is denoted by Orange, and 1 by Blue
@@ -177,17 +176,7 @@ shinyServer(function(input, output, session) {
       # print(Alpha[i])
       # print(paste("Player", i, "SIGNAL", sep = " "))
       # print(S)
-      
-      # Calculate the expected payoff to agent i for each declaration: 0, 1
-      # and save this as a vector
-      EUvector <- c( EU(i, 0, S), EU(i, 1, S) )
-      # If the payoffs are not tied, choose the declaration with the highest payoff
-      if ( EUvector[1] != EUvector[2] ) {
-        z <- which.max(c( EU(i, 0, S), EU(i, 1, S) )) - 1
-      } else { # if there is a payoff tie, choose a declaration at random 
-        z <- sample(c(1,0), 1, .5)
-      }
-      
+      z <- which.max( c( EU(i, 0, S), EU(i, 1, S) ) ) - 1
       # print(paste("Player", i, "BEST RESPONSE", sep = " "))
       # print(z)
       # print("------------------------------")
@@ -278,12 +267,12 @@ shinyServer(function(input, output, session) {
         # print("------------------------------")
         # print(paste("ROUND", t, sep = ))
   
-        # Set initial ignorance prior for all agents,
-        if (t == 1) { Prior <- InitialPrior }
-        
         # Generate the round's random order of play
         agentIndex <- sample(1:N, N, replace = FALSE)
       
+        # Set initial ignorance prior for all agents
+        if (t == 1) { Prior <- c(0.5) }
+        
         for(i in 1:N) {
           # Determine which agent is the focal player
           # who will now receive a signal from nature,
@@ -381,9 +370,11 @@ shinyServer(function(input, output, session) {
       Duration <- doSimulation()[[2]]
       PublicDeclarations <- doSimulation()[[6]]
       PublicBelief <- doSimulation()[[7]]
+      HistoryOfPlay <- doSimulation()[[8]]
       
       # Print the evolution of the public belief
-      PublicBeliefActionPlot <- data.frame(Turn = 0:(N*Duration), PublicBelief, PublicDeclarations)
+      PublicBeliefActionPlot <- data.frame(1:(N*Duration), PublicBelief, PublicDeclarations)
+      colnames(PublicBeliefActionPlot) <- c("Turn","PublicBelief")
       p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
         geom_line(data = PublicBeliefActionPlot, size = 1.5,
                   aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")) +
@@ -404,6 +395,32 @@ shinyServer(function(input, output, session) {
       
     }, height = 550, width = 550)
     
+    # Outplut plot for left input panel 
+    # of the distribution of truth-seeking vs.conformist types
+    # output$TypeDistributionPlot <- renderPlot({
+    # 
+    #   if (input$TypeDistribution == "Heterogeneous") {
+    #     alpha1 <- input$TypeAlpha
+    #     beta2 <- input$TypeBeta
+    #     x <- seq(0, 1, length=100)
+    #     y <- dbeta(x, alpha1, beta2)
+    #     dat <- data.frame(x, y)
+    #     colnames(dat) <- c("x", "y")
+    #     
+    #     ggplot(data=dat, aes(x=x, y=y)) +
+    #       geom_area(colour="dimgray", fill="dimgray") +
+    #       labs(x = NULL, y = NULL) +
+    #       ylim(low = 0, high = 5) +
+    #       theme_bw() +
+    #       scale_x_continuous(minor_breaks = seq(1, 5, .5)) +
+    #       theme(axis.ticks = element_blank(),
+    #             axis.text = element_blank(),
+    #             axis.title = element_text(size = 14),
+    #             panel.border = element_blank()
+    #       )
+    #   }
+    #   
+    # })
     
     ### Update interface based on inputs from other interface inputs
     
