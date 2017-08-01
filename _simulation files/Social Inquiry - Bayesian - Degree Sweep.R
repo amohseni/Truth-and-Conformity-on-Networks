@@ -7,13 +7,9 @@
   # URL: www.aydinmohseni.com
   
   
-  ### Install packages
-  library(animation)
-  library(ggplot2)
-  library(igraph)
   
   # Set the working directory as you please  
-  setwd("/Users/aydin/GitHub/Truth-and-Conformity-on-Networks/results")
+  setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results")
   
   
   ### Establish parameter sweep settings
@@ -22,7 +18,7 @@
   N <- 20 # Population size
   NetworkTypeSweep <- c("Regular", "Random") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
-  InitialDeclarationsSweep <- c("UniformlyAtRandom")
+  InitialDeclarationsSweep <- c("EvenSplit")
   numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
   NetworkDensitySweep <- seq(0, 1, by = 0.2) # Network densities for random networks
@@ -89,6 +85,10 @@
           }
           
           # Initial declarations of agents:
+          # From even split
+          if (InitialDeclarations == "EvenSplit") {
+            NetworkChoices <- sample(c(rep(1, N/2), rep(0, N/2)))
+          }
           # Uniformly at random
           if (InitialDeclarations == "UniformlyAtRandom") {
             NetworkChoices <- rbinom(N, 1, .5) 
@@ -97,6 +97,7 @@
           if (InitialDeclarations == "ConsensusOnFalseState") {
             NetworkChoices <- rep(0, N)
           }
+          
           
           # Create new history of play matrix
           HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) 
@@ -223,7 +224,7 @@
             
             # Retrieve the relevant parameters
             Pr <-  Prior
-            Ns <-  CoordinationPayoff(i, z)
+            Ns <-  CoordinationPayoff(i, 1)
             
             # Check if agent has no neighbors—is "isolated"
             # (and hence has no coordination payoff component determining her declaration)

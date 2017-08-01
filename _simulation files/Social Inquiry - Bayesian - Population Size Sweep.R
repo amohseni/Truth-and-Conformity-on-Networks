@@ -21,7 +21,7 @@
   numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
   NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Complete") # List of network types
+  NetworkTypeSweep <- c("Circle", "Star", "Random", "Regular") # List of network types
   # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
   InitialDeclarationsSweep <- c("EvenSplit") # List of initial conditions                                     
@@ -104,6 +104,10 @@
           }
           
           # Initial declarations of agents:
+          # From even split
+          if (InitialDeclarations == "EvenSplit") {
+            NetworkChoices <- sample(c(rep(1, N/2), rep(0, N/2)))
+          }
           # Uniformly at random
           if (InitialDeclarations == "UniformlyAtRandom") {
             NetworkChoices <- rbinom(N, 1, .5)
@@ -111,9 +115,6 @@
           # Consensus on false state
           if (InitialDeclarations == "ConsensusOnFalseState") {
             NetworkChoices <- rep(0, N)
-          }
-          if (InitialDeclarations == "EvenSplit") {
-            NetworkChoices <- sample(c(rep(1, N/2), rep(0, N/2)))
           }
           
           # Create new history of play matrix

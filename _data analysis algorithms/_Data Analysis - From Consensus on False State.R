@@ -9,6 +9,7 @@
   
   # Load packages from library
   library(reshape2)
+  library(ggplot2)
   
   # Set the working directory as you please  
   setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/from false consensus")
@@ -27,7 +28,7 @@
   ldf2num <- sapply(ldf2, data.matrix)
   ldf2num <- ldf2num[-c(1:numberOfSimulationsPerSetting),]
   # Get the means of the columns
-  allMeans2 <- colMeans(ldf2num)
+  allMeans2 <- colMeans(ldf2num[c(1:100000),])
   # Break this up into Belief and Declaration vectors
   beliefMeans2 <- allMeans2[1:(length(allMeans2)/2)]
   declarationMeans2 <- allMeans2[((length(allMeans2)/2)+1):length(allMeans2)] 
@@ -60,7 +61,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Belief in True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Belief") +
-    scale_y_continuous(limits = c(0, .51)) +
+    # scale_y_continuous(limits = c(.95, 1)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
   # Declaration line plot
@@ -69,7 +70,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Declaration of True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Declaration") +
-    scale_y_continuous(limits = c(0, .51)) +
+    # scale_y_continuous(limits = c(.93, 1)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
   
