@@ -13,8 +13,8 @@
   
   
   ### Establish parameter sweep settings
-  numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
-  numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
+  numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter setting
+  numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
   N <- 20 # Population size
   NetworkTypeSweep <- c("Regular", "Random") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)

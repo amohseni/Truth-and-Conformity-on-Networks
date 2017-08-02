@@ -1,31 +1,24 @@
-  ###########################################################################
   # TRUTH AND CONFORMITY ON NETWORKS 
   # SIMULATIONS : PARAMETER SWEEP — POPULATION SIZES
-  ###########################################################################
+
   # Created by: Aydin Mohseni 
   # Contact: aydin.mohseni@gmail.com
   # URL: www.aydinmohseni.com
 
   
-  ### Install packages
-  library(animation)
-  library(ggplot2)
-  library(igraph)
-  
+
   # Set the working directory as you please  
-  setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results")
+  setwd("/Users/patience/Desktop/results")
   
   
   ### Establish parameter sweep settings
-  numberOfSimulationsPerSetting <- 1000 # Number of simulations per parameter seting
-  numberOfTurnsPerSimulation <- 1000 # Number of turns per simulation
-  NSweep <- c(2, 4, 10, 20, 50) # List of poplulation size settings
+  numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter seting
+  numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
+  NSweep <- c(10, 20) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Circle", "Star", "Random", "Regular") # List of network types
-  # NetworkTypeSweep <- c("Complete", "Regular", "Circle", "Star", "Random") # List of network types
+  NetworkTypeSweep <- c("Complete", "Circle", "Star", "Random", "Regular") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
-  InitialDeclarationsSweep <- c("EvenSplit") # List of initial conditions                                     
-  # InitialDeclarationsSweep <- c("UniformlyAtRandom", "ConsensusOnFalseState") # List of initial conditions
+  InitialDeclarationsSweep <- c("EvenSplit", "ConsensusOnFalseState") # List of initial conditions                                     
   numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
   NetworkDensity <- 0.5 # Network density for random networks
@@ -320,7 +313,11 @@
             # Generate the round's random order of play
             agentIndex <- sample(1:N, N, replace = FALSE)
             
-            for(n in 1:N) {
+            # Ensure that, for population sizes that don't perfectly divide the total number of rounds,
+            # that the simulation still stops at exactly the right time
+            ifelse(N * t < numberOfTurnsPerSimulation, Nt <- N, Nt <- (numberOfTurnsPerSimulation - N * (t-1)))
+            
+            for(n in 1:Nt) {
               # Determine which player is the focal player
               # who will receive a signal from nature,
               # and make her public declaration
