@@ -9,13 +9,14 @@
 
 # Load packages from library
 library(reshape2)
+library(ggplot2)
 
 # Set the working directory as you please  
-setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/over varying degrees")
+setwd("/Users/patience/Desktop/results 2/fromfalseconsensus")
 
 # The number of simulations
-numberOfSimulationsPerSetting <- 1000
-N <- 20
+numberOfSimulationsPerSetting <- 10000
+N <- 10
 NetworkTypeSweep <- c("Regular", "Random")
 RegDegreeSweep <- seq(0, 1, by = 0.2)
 DegreeSweep <- N * RegDegreeSweep
@@ -62,6 +63,7 @@ ggplot(data = dfBelief3Melt, aes(x = Degree, y = MeanBelief)) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
   ggtitle("Mean Belief in True State as a Function of Degree") +
   labs(x = "Degree", y = "Mean Belief") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 # Declaration line plot
@@ -70,6 +72,7 @@ ggplot(data = dfDeclaration3Melt, aes(x = Degree, y = MeanDeclaration)) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
   ggtitle("Mean Declaration of True State as a Function of Degree") +
   labs(x = "Degree", y = "Mean Declaration") +
+  scale_y_continuous(limits = c(0, 1)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 

@@ -8,13 +8,13 @@
   
 
   # Set the working directory as you please  
-  setwd("/Users/patience/Desktop/results")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationData.N=10.r=10000")
   
   
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
-  NSweep <- c(10, 20) # List of poplulation size settings
+  NSweep <- c(2, 4, 6, 8, 12, 14, 16, 18) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
   NetworkTypeSweep <- c("Complete", "Circle", "Star", "Random", "Regular") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
@@ -40,7 +40,7 @@
       for (k in 1:numberOfPopulationSizes) {
         
         N <- NSweep[k] # Set number of agents
-        Duration <- ( numberOfTurnsPerSimulation / N ) # Set number of rounds of play
+        Duration <- ceiling( numberOfTurnsPerSimulation / N ) # Set number of rounds of play
         
         ### Create data frames in which to store the results of each simulation
         DeclarationDF <- data.frame(matrix(data = NA, nrow = numberOfSimulationsPerSetting, ncol = numberOfTurnsPerSimulation))

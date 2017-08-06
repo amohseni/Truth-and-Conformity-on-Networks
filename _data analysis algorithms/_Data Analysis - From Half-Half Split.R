@@ -12,10 +12,10 @@
   library(ggplot2)
   
   # Set the working directory as you please  
-  setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/from even split")
+  setwd("/Users/patience/Desktop/results 2/evensplit")
   
   # The number of simulations
-  numberOfSimulationsPerSetting <- 1000
+  numberOfSimulationsPerSetting <- 10000
   NSweep <- c(2, 4, 10, 20, 50)
   n <- length(NSweep)
   NetworkTypeSweep <- c("Circle", "Complete", "Random", "Regular", "Star")

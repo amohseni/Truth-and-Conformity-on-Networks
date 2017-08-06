@@ -9,20 +9,20 @@
   
   
   # Set the working directory as you please  
-  setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationData.N=10.r=10000")
   
   
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter setting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
-  N <- 20 # Population size
+  N <- 10 # Population size
   NetworkTypeSweep <- c("Regular", "Random") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
-  InitialDeclarationsSweep <- c("EvenSplit")
+  InitialDeclarationsSweep <- c("ConsensusOnFalseState", "EvenSplit")
   numberOfInitialConditions <- length(InitialDeclarationsSweep)
   
-  NetworkDensitySweep <- seq(0, 1, by = 0.2) # Network densities for random networks
   RegDegreeSweep <- seq(0, 1, by = 0.2) # Degree (as proportions of population size) for regular networks
+  NetworkDensitySweep <- seq(0, 1, by = 0.2) # Network densities for random networks
   numberOfDegreeSettings <- length(RegDegreeSweep)  
   
   ### Establish global variables
@@ -39,10 +39,7 @@
       
       for (k in 1:numberOfDegreeSettings) {
         
-        NetworkDensity <- NetworkDensitySweep[k]
-        RegDegree <- NetworkDensitySweep[k]
-        
-        Duration <- ( numberOfTurnsPerSimulation / N ) # Set number of rounds of play
+        Duration <- floor(numberOfTurnsPerSimulation / N) # Set number of rounds of play
         
         ### Create data frames in which to store the results of each simulation
         DeclarationDF <- data.frame(matrix(data = NA, nrow = numberOfSimulationsPerSetting, ncol = numberOfTurnsPerSimulation))
@@ -52,6 +49,7 @@
           
           # Regular graph
           if (NetworkType == "Regular") {
+            RegDegree <- RegDegreeSweep[k]
             degreeDensity <- round((RegDegree * N)/2)
             if (degreeDensity >= 1) {
               x <- rep(1:N, each = degreeDensity)
@@ -64,6 +62,7 @@
           }
           # Random graph
           if (NetworkType == "Random") {
+            NetworkDensity <- NetworkDensitySweep[k]
             numberOfPossibleEdges <- choose(N, 2)
             numberOfEdges <- ceiling(numberOfPossibleEdges * NetworkDensity)
             possibleEdges <- data.frame(t(combn(1:N, 2)))
