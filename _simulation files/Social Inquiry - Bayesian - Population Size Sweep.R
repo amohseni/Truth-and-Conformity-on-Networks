@@ -8,15 +8,15 @@
   
 
   # Set the working directory as you please  
-  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationData.N=10.r=10000")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationData.N=10.r=10000/fromFalseConsensus")
   
   
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
-  NSweep <- c(2, 4, 6, 8, 12, 14, 16, 18) # List of poplulation size settings
+  NSweep <- seq(from = 2, to = 20, by = 2) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep)
-  NetworkTypeSweep <- c("Complete", "Circle", "Star", "Random", "Regular") # List of network types
+  NetworkTypeSweep <- c("Circle", "Complete", "Random", "Regular", "Star") # List of network types
   numberOfNetworkTypes <- length(NetworkTypeSweep)
   InitialDeclarationsSweep <- c("EvenSplit", "ConsensusOnFalseState") # List of initial conditions                                     
   numberOfInitialConditions <- length(InitialDeclarationsSweep)
@@ -144,7 +144,7 @@
           # SIGNALS about STATES of the WORLD
           # Define the function corresponding to the acquisition of a SIGNAL 
           # by an agent about the true state of the world
-          Signal <- function(x) { 
+          Signal <- function() { 
             # Draw a realization from the uniform distribution
             U <- array(runif(1, min = 0, max = 1), 1) 
             # and apply the correct distribution transformation, depending on the state of the world Theta

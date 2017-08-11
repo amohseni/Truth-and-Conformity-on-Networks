@@ -12,7 +12,7 @@ library(reshape2)
 library(ggplot2)
 
 # Set the working directory as you please  
-setwd("/Users/patience/Desktop/results 2/fromfalseconsensus")
+setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeData.N=10.r=10000/fromEvenSplit")
 
 # The number of simulations
 numberOfSimulationsPerSetting <- 10000
@@ -63,7 +63,7 @@ ggplot(data = dfBelief3Melt, aes(x = Degree, y = MeanBelief)) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
   ggtitle("Mean Belief in True State as a Function of Degree") +
   labs(x = "Degree", y = "Mean Belief") +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(.7, 1)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 # Declaration line plot
@@ -72,7 +72,7 @@ ggplot(data = dfDeclaration3Melt, aes(x = Degree, y = MeanDeclaration)) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
   ggtitle("Mean Declaration of True State as a Function of Degree") +
   labs(x = "Degree", y = "Mean Declaration") +
-  scale_y_continuous(limits = c(0, 1)) +
+  scale_y_continuous(limits = c(.7, 1)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 
