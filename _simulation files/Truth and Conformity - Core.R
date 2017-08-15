@@ -12,19 +12,29 @@
   library(igraph)
   
   
-  ### Establish Global Variables
+  ### Establish global variables
   
-  N <- 10 # Number of agents
-  Duration <- 10000 # Number of rounds of play
+  N <- 20 # Number of agents
+  NumberOfTurns <- 20 # Number of turns of play
+  NumberOfRounds <- ceiling(NumberOfTurns / N) # Number of full rounds of play
+    # where each round is composed of N individual turns
   
-  # Create Social network
-  nodes <- c(1:N) # nodes
-  NetworkType <- c("Circle")
+  # Create social network
+  nodes <- c(1:N) # Nodes
+  NetworkType <- c("Complete") # Choose network type to be one of: 
+    # 1. Complete
+    # 2. Regular
+    # 3. Circle
+    # 4. Star
+    # 5. Random
   
-  networkDensity <- 0.5 # Network density for random networks
-  regDegree <- 0.5 # Degree (scaled by population size) for regular networks
+  regularNetworkDegree <- 0.5 # Degree (scaled by population size) for regular networks
+  randomNetworkDensity <- 0.5 # Network density for random networks
   
-  InitialDeclarations <- c("EvenSplit") # Initial declarations of the population
+  InitialDeclarations <- c("ConsensusOnFalseState") # Initial declarations of the population, on of:
+    # 1. EvenSplit
+    # 2. UniformlyAtRandom
+    # 3. ConsensusOnFalseState
   
   # Network type:
   # Complete network
@@ -33,9 +43,9 @@
     selfEdge <- N * c(0:(N-1)) + c(1:N)
     edges <- edges[-selfEdge,]
   }
-  # Regular graph
+  # Regular network
   if (NetworkType == "Regular") {
-    degreeDensity <- round((regDegree * N)/2)
+    degreeDensity <- round((regularNetworkDegree * N)/2)
     if (degreeDensity >= 1) {
       x <- rep(1:N, each = degreeDensity)
       y <- x + 1:degreeDensity
@@ -56,14 +66,14 @@
   # Random graph
   if (NetworkType == "Random") {
     numberOfPossibleEdges <- choose(N, 2)
-    numberOfEdges <- ceiling(numberOfPossibleEdges * NetworkDensity)
+    numberOfEdges <- ceiling(numberOfPossibleEdges * randomNetworkDensity)
     possibleEdges <- data.frame(t(combn(1:N, 2)))
     colnames(possibleEdges) <- c("from", "to")
     randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
     edges <- possibleEdges[randomEdgesSubset, ]
   }
   
-  # (Adjacency) matrix of the neighbors for each player (node)
+  # Adjacency matrix of the neighbors for each player
   adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
   for (m in 1:N) {
     adjMatSub <- subset(edges, from == m | to == m)
@@ -76,26 +86,30 @@
   }
   
   # Initial declarations of agents:
+  # From even split, where half the population is making each declaration
+  if (InitialDeclarations == "EvenSplit") {
+    NetworkChoices <- sample(c(rep(1, floor(N/2)), rep(0, ceiling(N/2))))
+    InitialState <- .5
+  }
   # Uniformly at random
   if (InitialDeclarations == "UniformlyAtRandom") {
     NetworkChoices <- rbinom(N, 1, .5)
+    InitialState <- table(factor(NetworkChoices))[2]/N
   }
   # Consensus on false state
   if (InitialDeclarations == "ConsensusOnFalseState") {
     NetworkChoices <- rep(0, N)
-  }
-  if (InitialDeclarations == "EvenSplit") {
-    NetworkChoices <- sample(c(rep(1, floor(N/2)), rep(0, ceiling(N/2))))
+    InitialState <- 0
   }
   
   # Create new history of play matrix
-  HistoryOfPlay <- matrix(NA, nrow = (N * Duration + 1), ncol = N) 
+  HistoryOfPlay <- matrix(NA, nrow = NumberOfTurns + 1, ncol = N) 
   # Save the initial conditions in the first row of history of play
-  HistoryOfPlay[1, ] <- NetworkChoices 
+  HistoryOfPlay[1, ] <- NetworkChoices
   
   # Create the population types and initial beliefs
-  BetaParameterforTruthSeeking <- 1
-  BetaParameterforConformity <- 1
+  BetaParameterforTruthSeeking <- 1 # Increasing this will increase the proportion of truth-seeking
+  BetaParameterforConformity <- 1 # Increasing this will increase the proportion of conformity
   Alpha <-
     rbeta(N,
           BetaParameterforTruthSeeking,
@@ -107,21 +121,21 @@
   PublicDeclarations <- c() # evolution of public declarations
   
   # Set the true state of the world
-  Theta <- 1 # where state 0 is denoted by Orange, and 1 by Blue
+  Theta <- 1 # where-in plots—state 1 is denoted by Orange, and 0 by White
   
   
   ### Define Functions
   
     # STATES of the WORLD
-    # Define the two distributions f0, f1 corresponding to 
-    # the two possible STATES OF THE WORLD: 0, 1
+    # Define the two distributions f1, f0 corresponding to 
+    # the two possible STATES OF THE WORLD: 1, 0
     # with the parameters
-    Mean0 <- -0.1 # Mean for distribution of signals if Theta is false: state is 0
-    Mean1 <- 0.1 # Mean for distribution of signals if Theta is true: state is 1
+    Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
+    Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
     Variance <- 1
     StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
-    fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  
     fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
+    fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  
     
     
     # SIGNALS about STATES of the WORLD
@@ -131,59 +145,62 @@
       return(rnorm(1, mean = Mean1, sd = sqrt(Variance)))
     }
     
-    # Define the CREDENCE function for player i for choice C
-    # using Bayes' rule, as Pr(C|D) = Pr(D|C)Pr(C)/Pr(D)
-    # That is, the poster probability of the truth of C, 
-    # given the product of the likelihood of the datat D given C, 
-    # over the total probability of D
-    Credence <- function(FocalAgent, Declaration, Signal) {
+    # Define the CREDENCE function for the focal player for state Theta = 1, 0
+    # using Bayes' rule, as Pr(Theta | Signal) = Pr(Signal | Theta) * Pr(Theta) / Pr(Signal)
+    # That is, the poster probability of the state Theta, 
+    # given the product of the likelihood of the Signal given Theta, 
+    # over the total probability of the Signal
+    Credence <- function(State, Signal) {
       w <- (1 + ((1 - Prior) / Prior) * (fTheta0(Signal) / fTheta1(Signal))) ^ -1
-      z <- ifelse(C == 1, w, (1 - w))
-      # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
+      z <- ifelse(State == 1, 
+                  w, 
+                  (1 - w))
+      # print(paste("POSTERIOR PROBABILITY for state ", State, " given signal ", Signal, sep = " "))
       # print(z)
       return(z)
     }
     
-    # Define the TRUTH-SEEKING payoff to player i for choice C
-    # as her assessement of the proability of the truth of C
+    # Define the TRUTH-SEEKING payoff to the focal player for a given declaration
+    # as her assessement of the proability of the truth of that declaration
     TruthSeekingPayoff <-
-      function(FocalAgent, Declaration, Signal) {
-        z <- Credence(FocalAgent, Declaration, Signal)
-        # print(paste("Player", i, "TRUTH-SEEKING PAYOFF for action", C, sep = " "))
+      function(Declaration, Signal) {
+        z <- Credence(Declaration, Signal)
+        # print(paste("TRUTH-SEEKING PAYOFF for action", Declaration, sep = " "))
         # print(z)
         return(z)
       }
     
-    # Define the SOCIAL COORDINATION payoff to player i for choice C
+    # Define the SOCIAL COORDINATION payoff to the focal player for a given declaration
     CoordinationPayoff <- function(FocalAgent, Declaration) {
       Neighbors <- adjacencyMatrix[FocalAgent, ]
       Neighbors <- Neighbors[!is.na(Neighbors)]
-      z <- table(factor(NetworkChoices[Neighbors], c(0, 1)))[[C + 1]] / length(Neighbors)
-      # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
+      z <- table(factor(NetworkChoices[Neighbors], c(0, 1)))[[Declaration + 1]] / length(Neighbors)
+      # print(paste("COORDINATION PAYOFF for action", Declaration, sep = " "))
       # print(z)
       return(z)
     }
     
-    # Define the EXPECTED PAYOFF to player i for choice C
+    # Define the EXPECTED PAYOFF to the focal player for the declaration of a state
     # as a convex combination of 
     # the product of her truth-seeking orientation α_i and her truth-seeking payoff
     # and the product of her coordination orientation (1 - α_i) and coordination payoff
+    # for that state
     EU <- function(FocalAgent, Declaration, Signal) {
       z <- 
-        Alpha[FocalAgent] * TruthSeekingPayoff(FocalAgent, Declaration, Signal) + (1 - Alpha[FocalAgent]) * CoordinationPayoff(FocalAgent, Declaration)
-      # print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
+        Alpha[FocalAgent] * TruthSeekingPayoff(Declaration, Signal) + (1 - Alpha[FocalAgent]) * CoordinationPayoff(FocalAgent, Declaration)
+      # print(paste("Player", FocalAgent, "EXPECTED UTILITY for action", Declaration, sep = " "))
       # print(z)
       return(z)
     }
     
-    # Define the BEST RESPONSE function to player i
-    # as playing the declaration of the social policy with the highest expected payoff
+    # Define the BEST RESPONSE function of the focal player
+    # as selecting the declaration that yields the highest expected payoff
     BR <- function(FocalAgent, Signal) {
       # print("------------------------------")
-      # print(paste("Player", i, "TYPE", sep = " "))
-      # print(Alpha[i])
-      # print(paste("Player", i, "SIGNAL", sep = " "))
-      # print(S)
+      # print(paste("Player", FocalAgent, "TYPE", sep = " "))
+      # print(Alpha[FocalAgent])
+      # print(paste("Player", FocalAgent, "SIGNAL", sep = " "))
+      # print(Signal)
       
       EUvector <- c(EU(FocalAgent, 0, Signal), EU(FocalAgent, 1, Signal))
       # If the payoffs are not tied, choose the declaration with the highest payoff
@@ -194,129 +211,119 @@
         z <- sample(c(1, 0), 1, .5)
       }
       
-      # print(paste("Player", i, "BEST RESPONSE", sep = " "))
+      # print(paste("Player", FocalAgent, "BEST RESPONSE", sep = " "))
       # print(z)
       # print("------------------------------")
       return(z)
     }
-    
-   
+
     
     # Define the PUBLIC PRIOR function,
     # whereby all players update their beliefs 
     # based on the declaration z of the focal individual i
     PublicPrior <- function(FocalAgent, Declaration) {
       
-      # Retrieve the proportion of the focal agent's neighbors 
-      # who are declaring state 1
-      Ns <- CoordinationPayoff(FocalAgent, 1)
-      
       # Check if the focal agent has no neighbors---i.e., she is "isolated"
       # (and hence has no coordination payoff component determining her declaration)
-      Neighbors <- adjacencyMatrix[FocalAgent, ]
+      Neighbors <- adjacencyMatrix[FocalAgent,]
       Isolated  <- (length(Neighbors[!is.na(Neighbors)]) == 0)
+      ifelse (Isolated == TRUE, # If the focal agent is indeed isolated,
+              Ns <- 1 / 2, # then let her neighbors be 'tied' in their declarations, so only her truth-seeking payoff counts
+              Ns <- CoordinationPayoff(FocalAgent, 1)) # If the focal agent is not isolated,
+              # Then retrieve the proportion of the focal agent's neighbors
+              # who are declaring state 1
       
       # Compute the LIKELIHOODS of the DECLARATION of the focal agent 
       # for each state of the world, Theta = 1, 0
-      if (Isolated == FALSE) {
         
-        # Calculate the probability of 
-        ProbabilityOfSignalGivenTheta1 <- function(Signal) {
-          z <- (1 + ((1 - Prior) / Prior) * exp((-1 / (2 * Variance ^ 2)) * (Mean1 - Mean0) * (2 * Signal - Mean0 - Mean1))) ^ -1
-          return(z)
-        }
-        
-        # Compute the threshold signal value needed 
-        # for the focal player to have declared state 1
-        SignalThreshold <- -(Variance ^ 2) * log((Ns ^ -1 - 1) * (Prior / (1 - Prior))) + (Mean0 - Mean1) / 2
-        
-        # Compute the threshold alpha value needed 
-        # for the focal player to have declared state 1
-        AlphaThreshold <- function(Signal) {
-          z <- pbeta(0.5 * ((1 - 2 * Ns) / (
-            2 * ProbabilityOfSignalGivenTheta(Signal) - Ns
-          )) ,
+      # Compute the threshold signal value needed 
+      # for the focal player to have declared state 1
+      SignalThreshold <- -(Variance) * log((Ns ^ -1 - 1) * (Prior / (1 - Prior))) / (Mean1 - Mean0) + (Mean0 + Mean1) / 2
+      
+      # Compute the threshold alpha value needed 
+      # for the focal player to have declared state 1
+      # multiplied by the PDF of 
+      AlphaThreshold <- function(Signal) {
+        return(pbeta(
+          0.5 * ((1 - 2 * Ns) / (Credence(1, Signal) - Ns)) ,
           BetaParameterforTruthSeeking,
-          BetaParameterforConformity)
-          return(z)
-        }
-        
-        # Compute the two likelihoods P(Declaration = 1 | Theta = 1) and P(Declaration = 1 | Theta = 0)
-        if (Ns > 1/2) {
-          LikelihoodTheta1 <-
-            integrate(
-              AlphaThreshold * fTheta1,
-              lower = -Inf,
-              upper = SignalThreshold
-            )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = sqrt(Variance))
-        } else {
-          LikelihoodTheta1 <-
-            integrate(
-              (1 - AlphaThreshold) * fTheta1,
-              lower = SignalThreshold,
-              upper = Inf
-            )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = sqrt(Variance))
-        }
-        
-        # Next, compute the likelihood P(Declaration = 1 | Theta = 0)
-        if (Ns > 1/2) {
-          LikelihoodTheta1 <-
-            integrate(
-              AlphaThreshold * fTheta0,
-              lower = -Inf,
-              upper = SignalThreshold
-            )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = sqrt(Variance))
-        } else {
-          LikelihoodTheta1 <-
-            integrate(
-              (1 - AlphaThreshold) * fTheta0,
-              lower = SignalThreshold,
-              upper = Inf
-            )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = sqrt(Variance))
-        }
+          BetaParameterforConformity
+        ))
       }
       
-      # In the case where the focal agent is isolated, 
-      # calculate the simplified likelihoods as follows 
-      if (Isolated == TRUE ) {
-        # Compute the likelihood P(Declaration = 1 | Theta = 1)
-        L1 <- integrate(fTheta1, lower = (1 - Prior), upper = 1)$value
-        # Compute the likelihood P(Declaration = 1 | Theta = 0) 
-        L0 <- integrate(fTheta0, lower = (1 - Prior), upper = 1)$value
+      # Create four integrand functions for each likelihood, 
+      # in each case: Ns > 1/2, NS < 1/2
+      Integrand.fTheta1.A <- function(Signal) { return(fTheta1(Signal) * AlphaThreshold(Signal)) }
+      Integrand.fTheta1.B <- function(Signal) { return(fTheta1(Signal) * (1 - AlphaThreshold(Signal))) }
+      Integrand.fTheta0.A <- function(Signal) { return(fTheta0(Signal) * AlphaThreshold(Signal)) }
+      Integrand.fTheta0.B <- function(Signal) { return(fTheta0(Signal) * (1 - AlphaThreshold(Signal))) }
+      
+      # Compute the two likelihood values: 
+      # P(Declaration = 1 | Theta = 1) and P(Declaration = 1 | Theta = 0)
+      
+      epsilon <- .1 # to prevent undefined boundary values in integration
+      
+      # First, compute P(Declaration = 1 | Theta = 1)
+      if (Ns > 1/2) {
+        LikelihoodTheta1 <-
+          integrate(
+            Integrand.fTheta1.A,
+            lower = -Inf,
+            upper = SignalThreshold - epsilon
+          )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = StandardDeviation)
+      } else {
+        LikelihoodTheta1 <-
+          integrate(
+            Integrand.fTheta1.B,
+            lower = SignalThreshold + epsilon,
+            upper = Inf
+          )$value
+      }
+      
+      # Next, compute P(Declaration = 1 | Theta = 0)
+      if (Ns > 1/2) {
+        LikelihoodTheta0 <-
+          integrate(
+            Integrand.fTheta0.A,
+            lower = -Inf,
+            upper = SignalThreshold - epsilon
+          )$value + 1 - pnorm(SignalThreshold, mean = Mean0, sd = StandardDeviation)
+      } else {
+        LikelihoodTheta0 <-
+          integrate(
+            Integrand.fTheta0.B,
+            lower = SignalThreshold + epsilon,
+            upper = Inf
+          )$value
       }
       
       # If the declaration was of state 0 (rather than 1), 
-      # then take the complement of the likelihoods
-      # to get the Pr(Declaration = 0 | Theta = 1) and Pr(Declaration = 0 | Theta = 0)
+      # then take the complement of the likelihoods just computed
+      # to get the correct likelihoods Pr(Declaration = 0 | Theta = 1) and Pr(Declaration = 0 | Theta = 0)
       if (Declaration == 0) {
         LikelihoodTheta1 <- (1 - LikelihoodTheta1) 
-        # print("LIKELIHOOD of declaration given Theta = 0")
+        # print("LIKELIHOOD of declaration 0 given Theta = 1")
         LikelihoodTheta0 <- (1 - LikelihoodTheta0)
-        # print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
+        # print("LIKELIHOOD of declaration 0 given Theta = 0")
       } 
 
       
-      # Compute P(Theta|z) or P(Theta|¬z)
+      # Compute the new posterior public belief P(Theta | Declaration of focal agent) 
       z <- (1 + ((1 - Prior) / Prior) * (LikelihoodTheta0 / LikelihoodTheta1)) ^ -1
-      # print("POSTERIOR/PUBLIC BELIEF")
-      # print(w)
+      # print("PUBLIC BELIEF")
+      # print(z)
       return(z)
     }
     
   
   #### Initialize Simulation
     
-    # Nature randomly chooses the state of the world as either 0 or 1,
-    # which determines the corresponding pdfs f1, or F0
-    # print(paste("The true state of the world is", Theta , sep = ))
-    # print(Theta)
-    
     # print("------------------------------")
     # print("Initial declarations")
     # print(NetworkChoices)
     
   ### Run a round of the Simulation
-    for(t in 1:Duration) {
+    for(t in 1:NumberOfRounds) {
       
       # print("------------------------------")
       # print(paste("ROUND", t, sep = ))
@@ -327,35 +334,44 @@
       # Generate the round's random order of play
       agentIndex <- sample(1:N, N, replace = FALSE)
       
-      for(i in 1:N) {
+      # Ensure that, for population sizes that don't perfectly divide the total number of rounds,
+      # that the simulation still stops at exactly the right turn
+      ifelse(N * t <= NumberOfTurns,
+             Nt <- N,
+             Nt <- (NumberOfTurns - N * (t - 1)))
+
+        
+      for(i in 1:Nt) {
         # Determine which player is the focal player
         # who will receive a signal from nature,
-        # and make her public declaration
-        FocalAgent <- agentIndex[n]
+        # and then make her public declaration
+        FocalAgent <- agentIndex[i]
         
-        # Have agent i get her private signal S about the state of the world
+        # Have the focal agent get her private signal about the state of the world
         Signal <- DrawSignal()
         
-        # Have agent i update her belief about the state of the world, 
-        # calculate her current coordination payoff based on the declarations of  
-        # and choose how to act.
-        # That is, choose which social policy to DECLARE
-        DeclarationOfFocalAgent <- BR(FocalAgent, S)
+        # Have the focal agent update her belief about the state of the world, 
+        # calculate her expected payoffs for each declaration,
+        # and to make the declaration that is her best response
+        DeclarationOfFocalAgent <- BR(FocalAgent, Signal)
         
-        # Update the public prior, given the declaration of agent i
+        # Update the public prior, given the declaration of the focal agent
         Prior <- PublicPrior(FocalAgent, DeclarationOfFocalAgent)
-        # Update the history of belief
+        # Update the history of belief in the state Theta = 1
         PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
         
         # Update the vector of current network choices
-        # with the agent's DECLARATION z
+        # with the agent's declaration
         NetworkChoices[FocalAgent] <- DeclarationOfFocalAgent
         
-        # Update the history of play for the round
-        HistoryOfPlay[(N*(t-1) + i) + 1, ] <- NetworkChoices
+        # Record the proportion of players declaring Theta = 1
+        PublicDeclarations <-
+          append(PublicDeclarations,
+                 table(factor(NetworkChoices, c(0, 1)))[[2]] / N,
+                 after = length(PublicDeclarations))
         
-        # Record the proportion of players declaring Theta
-        PublicDeclarations <- append(PublicDeclarations, table(factor(NetworkChoices, c(0,1)))[[2]] / N, after = length(PublicDeclarations))
+        # Update the history of play for the round
+        HistoryOfPlay[(N * (t - 1) + i) + 1,] <- NetworkChoices
       }
       
       # Print the history of play
@@ -365,7 +381,9 @@
       
       # Replace the agents 
       # by reset the Alpha vector
-      Alpha <- rbeta(N, 1, 1)
+      Alpha <- rbeta(N, 
+                     BetaParameterforTruthSeeking,
+                     BetaParameterforConformity)
     }
   
     # # Graph the evolution of the network
@@ -385,26 +403,26 @@
     # }
     # ani.options(oopt)
     # 
-    # # Print the evolution of the public belief
-    # PublicBeliefActionPlot <-
-    #   data.frame(1:(N * Duration), PublicBelief, PublicDeclarations)
-    # colnames(PublicBeliefActionPlot) <- c("Turn", "PublicBelief")
-    # p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
-    #   geom_line(data = PublicBeliefActionPlot, size = 1.5,
-    #             aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")) +
-    #   geom_line(data = PublicBeliefActionPlot, size = 1.5,
-    #             aes(x = Turn, y = PublicDeclarations, colour = "Declarations of True State  ")) +
-    #   ggtitle("Public Belief and Declarations") +
-    #   labs(x = "Time", y = "Proportion") +
-    #   theme_bw() +
-    #   scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
-    #   scale_color_manual(values=c("orange2", "dimgray")) +
-    #   theme(legend.position = "bottom",
-    #         legend.title = element_blank(),
-    #         plot.title = element_text(hjust = 0.5),
-    #         text = element_text(size = 16),
-    #         legend.text = element_text(size = 14)
-    #   )
-    # print(p)
-  
-    
+    # Print the evolution of the public belief
+    PublicBeliefActionPlot <-
+      data.frame(0:NumberOfTurns, c(InitialPrior, PublicBelief), c(InitialState, PublicDeclarations))
+    colnames(PublicBeliefActionPlot) <- c("Turn", "PublicBelief", "PublicDeclarations")
+    p <- ggplot(PublicBeliefActionPlot, aes()) +
+      geom_line(size = 1.5,
+                aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")) +
+      geom_line(size = 1.5,
+                aes(x = Turn, y = PublicDeclarations, colour = "Declarations of True State  ")) +
+      ggtitle("Public Belief in and Declaration of the True State") +
+      labs(x = "Time", y = "Proportion") +
+      theme_light() +
+      scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
+      scale_color_manual(values = c("orange2", "dimgray")) +
+      theme(
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        plot.title = element_text(hjust = 0.5),
+        text = element_text(size = 16),
+        legend.text = element_text(size = 14)
+      )
+    print(p)
+
