@@ -1,3 +1,5 @@
+## TEST: CREDENCE FUNCTION 
+
 Cred1 <- data.frame(matrix(data = NA, nrow = length(PriorSweep), ncol = length(NsSweep)))
 Cred0 <- data.frame(matrix(data = NA, nrow = length(PriorSweep), ncol = length(NsSweep)))
 rownames(Cred1) <- sprintf("Pr=%s", seq(from = 0, to = 1, by = .1))

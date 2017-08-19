@@ -1,3 +1,4 @@
+## TEST: PUBLIC PRIOR - SIMPLE (UNIFORM + LINEAR)
 
 PriorSweep <- seq(from = 0, to = 1, by = .1)
 NsSweep <- seq(from = 0, to = 1, by = .1)

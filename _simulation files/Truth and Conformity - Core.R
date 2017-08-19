@@ -14,8 +14,8 @@
   
   ### Establish global variables
   
-  N <- 20 # Number of agents
-  NumberOfTurns <- 20 # Number of turns of play
+  N <- 10 # Number of agents
+  NumberOfTurns <- 100 # Number of turns of play
   NumberOfRounds <- ceiling(NumberOfTurns / N) # Number of full rounds of play
     # where each round is composed of N individual turns
   
@@ -31,7 +31,7 @@
   regularNetworkDegree <- 0.5 # Degree (scaled by population size) for regular networks
   randomNetworkDensity <- 0.5 # Network density for random networks
   
-  InitialDeclarations <- c("ConsensusOnFalseState") # Initial declarations of the population, on of:
+  InitialDeclarations <- c("EvenSplit") # Initial declarations of the population, on of:
     # 1. EvenSplit
     # 2. UniformlyAtRandom
     # 3. ConsensusOnFalseState
@@ -132,7 +132,7 @@
     # with the parameters
     Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
     Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
-    Variance <- 1
+    Variance <- 10
     StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
     fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
     fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  
@@ -174,9 +174,13 @@
     CoordinationPayoff <- function(FocalAgent, Declaration) {
       Neighbors <- adjacencyMatrix[FocalAgent, ]
       Neighbors <- Neighbors[!is.na(Neighbors)]
-      z <- table(factor(NetworkChoices[Neighbors], c(0, 1)))[[Declaration + 1]] / length(Neighbors)
-      # print(paste("COORDINATION PAYOFF for action", Declaration, sep = " "))
-      # print(z)
+      if (length(Neighbors) != 0) {
+        z <- table(factor(NetworkChoices[Neighbors], c(0, 1)))[[Declaration + 1]] / length(Neighbors)
+        # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
+        # print(z)
+      } else { 
+        z <- 0
+      }
       return(z)
     }
     
@@ -238,7 +242,8 @@
         
       # Compute the threshold signal value needed 
       # for the focal player to have declared state 1
-      SignalThreshold <- -(Variance) * log((Ns ^ -1 - 1) * (Prior / (1 - Prior))) / (Mean1 - Mean0) + (Mean0 + Mean1) / 2
+      SignalThreshold <-
+        -(Variance) * log((Prior / (1 - Prior))) / (Mean1 - Mean0) + (Mean0 + Mean1) / 2
       
       # Compute the threshold alpha value needed 
       # for the focal player to have declared state 1
@@ -261,21 +266,19 @@
       # Compute the two likelihood values: 
       # P(Declaration = 1 | Theta = 1) and P(Declaration = 1 | Theta = 0)
       
-      epsilon <- .1 # to prevent undefined boundary values in integration
-      
       # First, compute P(Declaration = 1 | Theta = 1)
       if (Ns > 1/2) {
         LikelihoodTheta1 <-
           integrate(
             Integrand.fTheta1.A,
             lower = -Inf,
-            upper = SignalThreshold - epsilon
+            upper = SignalThreshold
           )$value + 1 - pnorm(SignalThreshold, mean = Mean1, sd = StandardDeviation)
       } else {
         LikelihoodTheta1 <-
           integrate(
             Integrand.fTheta1.B,
-            lower = SignalThreshold + epsilon,
+            lower = SignalThreshold,
             upper = Inf
           )$value
       }
@@ -286,13 +289,13 @@
           integrate(
             Integrand.fTheta0.A,
             lower = -Inf,
-            upper = SignalThreshold - epsilon
+            upper = SignalThreshold
           )$value + 1 - pnorm(SignalThreshold, mean = Mean0, sd = StandardDeviation)
       } else {
         LikelihoodTheta0 <-
           integrate(
             Integrand.fTheta0.B,
-            lower = SignalThreshold + epsilon,
+            lower = SignalThreshold,
             upper = Inf
           )$value
       }
@@ -307,7 +310,6 @@
         # print("LIKELIHOOD of declaration 0 given Theta = 0")
       } 
 
-      
       # Compute the new posterior public belief P(Theta | Declaration of focal agent) 
       z <- (1 + ((1 - Prior) / Prior) * (LikelihoodTheta0 / LikelihoodTheta1)) ^ -1
       # print("PUBLIC BELIEF")
@@ -357,6 +359,7 @@
         
         # Update the public prior, given the declaration of the focal agent
         Prior <- PublicPrior(FocalAgent, DeclarationOfFocalAgent)
+        
         # Update the history of belief in the state Theta = 1
         PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
         
@@ -379,8 +382,7 @@
       # print("HISTORY of PLAY")
       # print(HistoryOfPlay)
       
-      # Replace the agents 
-      # by reset the Alpha vector
+      # Replace the agents by resetting the Alpha vector
       Alpha <- rbeta(N, 
                      BetaParameterforTruthSeeking,
                      BetaParameterforConformity)
@@ -389,11 +391,11 @@
     # # Graph the evolution of the network
     # nodesOverTime <- data.frame(nodes, t(HistoryOfPlay))
     # colnames(nodesOverTime) <- c("id", 1:(N*Duration + 1))
-    # net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F) 
+    # net <- graph_from_data_frame(d = edges, vertices = nodesOverTime, directed = F)
     # net <- simplify(net, remove.multiple = T, remove.loops = T)
     # l <- layout_in_circle(net)
     # 
-    # Run network animation
+    # # Run network animation
     # oopt = ani.options(interval = .1)
     # for (i in 1: (N * Duration + 1)) {
     # plot(net, edge.arrow.size = .4, vertex.label = NA, layout = l,

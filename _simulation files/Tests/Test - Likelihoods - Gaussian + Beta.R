@@ -1,3 +1,5 @@
+## TEST: PUBLIC PRIOR - GENERAL (BETA + GAUSSIAN)
+
 Mean1 <- 1 
 Mean0 <- -1 
 Variance <- 1
@@ -56,6 +58,9 @@ for (i in 1:length(PriorSweep)) {
       function(Signal) {
         return(fTheta0(Signal) * (1 - AlphaThreshold(Signal)))
       }
+    
+    SignalThreshold <-
+      -(Variance) * log((Prior / (1 - Prior))) / (Mean1 - Mean0) + (Mean0 + Mean1) / 2
     
     # First, compute P(Declaration = 1 | Theta = 1)
     if (Ns > 1 / 2) {

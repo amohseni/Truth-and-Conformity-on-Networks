@@ -1,8 +1,9 @@
+## TEST: PUBLIC PRIOR - GENERAL (BETA + GAUSSIAN) FULL
+
 Mean1 <- 1 
 Mean0 <- -1 
 Variance <- 1
-StandardDeviation <-
-  sqrt(Variance)
+StandardDeviation <- sqrt(Variance)
 epsilon <- .001
 
 PriorSweep <- seq(from = .1, to = 1, by = .1)
