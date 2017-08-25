@@ -12,14 +12,14 @@ library(reshape2)
 library(ggplot2)
 
 # Set the working directory as you please  
-setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeData.N=10.r=10000/FromFalseConsensus")
+setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeSweep/False Consensus N=20")
 
 # The number of simulations
 numberOfSimulationsPerSetting <- 10000
 numberOfTurnsPerSimulation <- 100 
-N <- 10
+N <- 20
 NetworkTypeSweep <- c("Regular", "Random")
-RegDegreeSweep <- seq(0, 1, by = 0.2)
+RegDegreeSweep <- seq(0, 1, by = 0.1)
 DegreeSweep <- N * RegDegreeSweep
 numberOfDegreeSettings <- length(RegDegreeSweep) 
 
@@ -51,11 +51,16 @@ for (j in 1:numberOfTurnsPerSimulation) {
     a <- 1 + (j - 1) * numberOfSimulationsPerSetting
     b <- j * numberOfSimulationsPerSetting
     dfRegular.d0[,j] <- ldf5num[c(a : b), 1]
-    dfRegular.d0.2[,j] <- ldf5num[c(a : b), 2]
-    dfRegular.d0.4[,j] <- ldf5num[c(a : b), 3]
-    dfRegular.d0.6[,j] <- ldf5num[c(a : b), 4]
-    dfRegular.d0.8[,j] <- ldf5num[c(a : b), 5]
-    dfRegular.d1[,j] <- ldf5num[c(a : b), 6]
+    dfRegular.d0.1[,j] <- ldf5num[c(a : b), 2]
+    dfRegular.d0.2[,j] <- ldf5num[c(a : b), 3]
+    dfRegular.d0.3[,j] <- ldf5num[c(a : b), 4]
+    dfRegular.d0.4[,j] <- ldf5num[c(a : b), 5]
+    dfRegular.d0.5[,j] <- ldf5num[c(a : b), 6]
+    dfRegular.d0.6[,j] <- ldf5num[c(a : b), 7]
+    dfRegular.d0.7[,j] <- ldf5num[c(a : b), 8]
+    dfRegular.d0.8[,j] <- ldf5num[c(a : b), 9]
+    dfRegular.d0.9[,j] <- ldf5num[c(a : b), 10]
+    dfRegular.d1[,j] <- ldf5num[c(a : b), 11]
 }
 
 # next for random networks
@@ -69,12 +74,17 @@ for (i in 1:length(RegDegreeSweep)) {
 for (j in 1:numberOfTurnsPerSimulation) {
   a <- 1 + (j - 1) * numberOfSimulationsPerSetting
   b <- j * numberOfSimulationsPerSetting
-  dfRandom.d0[,j] <- ldf5num[c(a : b), 7]
-  dfRandom.d0.2[,j] <- ldf5num[c(a : b), 8]
-  dfRandom.d0.4[,j] <- ldf5num[c(a : b), 9]
-  dfRandom.d0.6[,j] <- ldf5num[c(a : b), 10]
-  dfRandom.d0.8[,j] <- ldf5num[c(a : b), 11]
-  dfRandom.d1[,j] <- ldf5num[c(a : b), 12]
+  dfRandom.d0[,j] <- ldf5num[c(a : b), 12]
+  dfRandom.d0.1[,j] <- ldf5num[c(a : b), 13]
+  dfRandom.d0.2[,j] <- ldf5num[c(a : b), 14]
+  dfRandom.d0.3[,j] <- ldf5num[c(a : b), 15]
+  dfRandom.d0.4[,j] <- ldf5num[c(a : b), 16]
+  dfRandom.d0.5[,j] <- ldf5num[c(a : b), 17]
+  dfRandom.d0.6[,j] <- ldf5num[c(a : b), 18]
+  dfRandom.d0.7[,j] <- ldf5num[c(a : b), 19]
+  dfRandom.d0.8[,j] <- ldf5num[c(a : b), 20]
+  dfRandom.d0.9[,j] <- ldf5num[c(a : b), 21]
+  dfRandom.d1[,j] <- ldf5num[c(a : b), 22]
 }
 
 
@@ -119,6 +129,6 @@ p <- ggplot(HittingTimePlot, aes(x = Degree, y = Hitting.Time, colour = Network)
   labs(x = "Mean Degree", y = "Mean Hitting Time") +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5)) +
-  scale_y_continuous(breaks = seq(0, 30, 5), limits = c(0, 30)) +
+  scale_y_continuous(breaks = seq(0, 100, 10), limits = c(0, 100)) +
   scale_x_continuous(breaks = seq(0, 1, .2), limits = c(0, 1))
 print(p)

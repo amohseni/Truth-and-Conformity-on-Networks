@@ -12,13 +12,13 @@ library(reshape2)
 library(ggplot2)
 
 # Set the working directory as you please  
-setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeData.N=10.r=10000/fromEvenSplit")
+setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeSweep/False Consensus N=20")
 
 # The number of simulations
 numberOfSimulationsPerSetting <- 10000
-N <- 10
+N <- 20
 NetworkTypeSweep <- c("Regular", "Random")
-RegDegreeSweep <- seq(0, 1, by = 0.2)
+RegDegreeSweep <- seq(0, 1, by = 0.1)
 DegreeSweep <- N * RegDegreeSweep
 numberOfDegreeSettings <- length(RegDegreeSweep)  
 
@@ -46,10 +46,10 @@ for (i in 1:length(NetworkTypeSweep)) {
 }
 
 # Create data frame 
-dfBelief3 <- data.frame(Degree = DegreeSweep, Regular = Regular.Belief, Random = Random.Belief)
+dfBelief3 <- data.frame(Degree = RegDegreeSweep, Regular = Regular.Belief, Random = Random.Belief)
 dfBelief3Melt <- melt(dfBelief3, id.vars=1)
 colnames(dfBelief3Melt) <- c("Degree", "Network", "MeanBelief")
-dfDeclaration3 <- data.frame(Degree = DegreeSweep, Regular = Regular.Declaration, Random = Random.Declaration)
+dfDeclaration3 <- data.frame(Degree = RegDegreeSweep, Regular = Regular.Declaration, Random = Random.Declaration)
 dfDeclaration3Melt <- melt(dfDeclaration3, id.vars = 1)
 colnames(dfDeclaration3Melt) <- c("Degree", "Network", "MeanDeclaration")
 
@@ -60,20 +60,24 @@ print(dfDeclaration3)
 # Belief line plot
 ggplot(data = dfBelief3Melt, aes(x = Degree, y = MeanBelief)) +
   geom_line(aes(group = Network, color = Network), size = 1) +
+  scale_color_manual(values = c("yellow3", "orchid")) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
+  scale_shape_manual(values = c(17, 7)) +
   ggtitle("Mean Belief in True State as a Function of Degree") +
-  labs(x = "Degree", y = "Mean Belief") +
-  scale_y_continuous(limits = c(.7, 1)) +
+  labs(x = "Degree Density", y = "Mean Belief") +
+  scale_y_continuous(limits = c(.5, .75)) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0,1,.2)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
 # Declaration line plot
 ggplot(data = dfDeclaration3Melt, aes(x = Degree, y = MeanDeclaration)) +
   geom_line(aes(group = Network, color = Network), size = 1) +
+  scale_color_manual(values = c("yellow3", "orchid")) +
   geom_point(aes(shape = Network, color = Network), size = 2) +
+  scale_shape_manual(values=c(17, 7)) +
   ggtitle("Mean Declaration of True State as a Function of Degree") +
-  labs(x = "Degree", y = "Mean Declaration") +
-  scale_y_continuous(limits = c(.7, 1)) +
+  labs(x = "Degree Density", y = "Mean Declaration") +
+  scale_y_continuous(limits = c(0, 1)) +
+  scale_x_continuous(limits = c(0, 1), breaks = seq(0,1,.2)) +
   theme_light() +
   theme(plot.title = element_text(hjust = 0.5))
-
-

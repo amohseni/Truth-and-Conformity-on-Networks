@@ -12,7 +12,7 @@
   library(ggplot2)
   
   # Set the working directory as you please  
-  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationData.N=10.r=10000/fromEvenSplit")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationSweep/False Consensus")
   
   # The number of simulations
   numberOfSimulationsPerSetting <- 10000
@@ -61,7 +61,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Belief in True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Belief") +
-    scale_y_continuous(limits = c(.7, 1)) +
+    scale_y_continuous(limits = c(0.5, .75)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
   # Declaration line plot
@@ -70,7 +70,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Declaration of True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Declaration") +
-    scale_y_continuous(limits = c(.7, 1)) +
+    scale_y_continuous(limits = c(0, 1)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
     

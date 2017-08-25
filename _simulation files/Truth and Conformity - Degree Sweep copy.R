@@ -9,26 +9,26 @@
   
   
   # Set the working directory as you please  
-  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/degreeSweep")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/highVariation")
   
   
   ### Establish parameter sweep settings
   numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter setting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
   Duration <- ceiling(numberOfTurnsPerSimulation / N) # Set number of rounds of play
-  N <- 10 # Population size
+  N <- 20 # Population size
   NetworkTypeSweep <- c("Regular", "Random") # List of network types, from among:
   # 1. Regular
   # 2. Random
   numberOfNetworkTypes <- length(NetworkTypeSweep) # Number of network types to simulate
-  InitialDeclarationsSweep <- c("ConsensusOnFalseState") # Initial declarations of the population, from among::
+  InitialDeclarationsSweep <- c("ConsensusOnFalseState", "EvenSplit") # Initial declarations of the population, from among::
   # 1. EvenSplit
   # 2. UniformlyAtRandom
   # 3. ConsensusOnFalseState  
   numberOfInitialConditions <- length(InitialDeclarationsSweep) # Number of initial conditions to simulate
   
-  RegDegreeSweep <- seq(0, 1, by = 0.2) # Degree (as proportions of population size) for regular networks
-  NetworkDensitySweep <- seq(0, 1, by = 0.2) # Network densities for random networks
+  RegDegreeSweep <- seq(from = 0, to = 1, by = 0.1) # Degree (as proportions of population size) for regular networks
+  NetworkDensitySweep <- seq(from = 0, to = 1, by = 0.1) # Network densities for random networks
   numberOfDegreeSettings <- length(RegDegreeSweep) # # Number of degree settings types to simulate
   
   
@@ -55,10 +55,10 @@
           # Regular graph
           if (NetworkType == "Regular") {
             RegDegree <- RegDegreeSweep[k]
-            degreeDensity <- round((RegDegree * N)/2)
-            if (degreeDensity >= 1) {
-              x <- rep(1:N, each = degreeDensity)
-              y <- x + 1:degreeDensity
+            edgesPerNode <- round((RegDegree * N)/2)
+            if (edgesPerNode >= 1) {
+              x <- rep(1:N, each = edgesPerNode)
+              y <- x + 1:edgesPerNode
               y[y > N] <- y[y > N] - N
               edges <- data.frame(from = x, to = y)
             } else {
@@ -73,7 +73,7 @@
             possibleEdges <- data.frame(t(combn(1:N, 2)))
             colnames(possibleEdges) <- c("from", "to")
             randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
-            edges <- possibleEdges[randomEdgesSubset, ]
+            edges <- possibleEdges[randomEdgesSubset,]
           }
           
           # (Adjacency) matrix of the neighbors for each player (node)
@@ -127,7 +127,7 @@
           # with the parameters
           Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
           Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
-          Variance <- 10
+          Variance <- 100
           StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
           fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
           fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  
