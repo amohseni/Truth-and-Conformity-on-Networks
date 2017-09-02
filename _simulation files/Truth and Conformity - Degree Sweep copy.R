@@ -13,7 +13,7 @@
   
   
   ### Establish parameter sweep settings
-  numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter setting
+  numberOfSimulationsPerSetting <- 50000 # Number of simulations per parameter setting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
   Duration <- ceiling(numberOfTurnsPerSimulation / N) # Set number of rounds of play
   N <- 20 # Population size
@@ -127,7 +127,7 @@
           # with the parameters
           Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
           Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
-          Variance <- 100
+          Variance <- 50
           StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
           fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
           fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  

@@ -8,11 +8,11 @@
   
 
   # Set the working directory as you please  
-  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/populationSweep")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/highVariation")
   
   
   ### Establish parameter sweep settings
-  numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter seting
+  numberOfSimulationsPerSetting <- 100000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
   NSweep <- seq(from = 2, to = 20, by = 2) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep) # Number of population sizes to simulate
@@ -23,7 +23,7 @@
   # 4. Star
   # 5. Random
   numberOfNetworkTypes <- length(NetworkTypeSweep) # Number of network types to simulate
-  InitialDeclarationsSweep <- c("ConsensusOnFalseState") # List of initial conditions, from among:
+  InitialDeclarationsSweep <- c("ConsensusOnFalseState", "EvenSplit") # List of initial conditions, from among:
   # 1. EvenSplit
   # 2. UniformlyAtRandom
   # 3. ConsensusOnFalseState  
@@ -143,7 +143,7 @@
           # with the parameters
           Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
           Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
-          Variance <- 10
+          Variance <- 50
           StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
           fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
           fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  
