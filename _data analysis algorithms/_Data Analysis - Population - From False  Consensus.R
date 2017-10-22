@@ -12,13 +12,13 @@
   library(ggplot2)
   
   # Set the working directory as you please  
-  setwd("/Users/aydin/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/from false consensus")
+  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/highVariation/subset")
   
   # The number of simulations
-  numberOfSimulationsPerSetting <- 1000
-  NSweep <- c(2, 5, 10, 20, 50)
+  numberOfSimulationsPerSetting <- 100000
+  NSweep <- seq(2, 20, 2)
   n <- length(NSweep)
-  NetworkTypeSweep <- c("Circle", "Complete", "Random", "Regular", "Star")
+  NetworkTypeSweep <- c("Circle", "Complete")
   
   # List the files in the directory
   filenames2 <- list.files(pattern="*.csv", full.names=TRUE)
@@ -28,7 +28,7 @@
   ldf2num <- sapply(ldf2, data.matrix)
   ldf2num <- ldf2num[-c(1:numberOfSimulationsPerSetting),]
   # Get the means of the columns
-  allMeans2 <- colMeans(ldf2num[c(1:100000),])
+  allMeans2 <- colMeans(ldf2num)
   # Break this up into Belief and Declaration vectors
   beliefMeans2 <- allMeans2[1:(length(allMeans2)/2)]
   declarationMeans2 <- allMeans2[((length(allMeans2)/2)+1):length(allMeans2)] 
@@ -44,10 +44,12 @@
     }
   
   # Create data frame 
-  dfBelief2 <- data.frame(N = NSweep, Complete = Complete.Belief, Regular = Regular.Belief, Circle = Circle.Belief, Star = Star.Belief, Random = Random.Belief)
+  # dfBelief2 <- data.frame(N = NSweep, Complete = Complete.Belief, Regular = Regular.Belief, Circle = Circle.Belief, Star = Star.Belief, Random = Random.Belief)
+  dfBelief2 <- data.frame(N = NSweep, Complete = Complete.Belief, Circle = Circle.Belief)
   dfBelief2Melt <- melt(dfBelief2, id.vars=1)
   colnames(dfBelief2Melt) <- c("N", "Network", "MeanBelief")
-  dfDeclaration2 <- data.frame(N = NSweep, Complete = Complete.Declaration, Regular = Regular.Declaration, Circle = Circle.Declaration, Star = Star.Declaration, Random = Random.Declaration)
+  # dfDeclaration2 <- data.frame(N = NSweep, Complete = Complete.Declaration, Regular = Regular.Declaration, Circle = Circle.Declaration, Star = Star.Declaration, Random = Random.Declaration)
+  dfDeclaration2 <- data.frame(N = NSweep, Complete = Complete.Declaration, Circle = Circle.Declaration)
   dfDeclaration2Melt <- melt(dfDeclaration2, id.vars = 1)
   colnames(dfDeclaration2Melt) <- c("N", "Network", "MeanDeclaration")
   
@@ -70,7 +72,7 @@
     geom_point(aes(shape = Network, color = Network), size = 2) +
     ggtitle("Mean Declaration of True State as a Function of Population Size") +
     labs(x = "Population Size", y = "Mean Declaration") +
-    # scale_y_continuous(limits = c(.93, 1)) +
+    scale_y_continuous(limits = c(0, 1)) +
     theme_light() +
     theme(plot.title = element_text(hjust = 0.5))
   

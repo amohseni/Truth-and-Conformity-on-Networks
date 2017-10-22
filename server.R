@@ -12,33 +12,32 @@ library(igraph)
 
 ### Define server logic for Application
 shinyServer(function(input, output, session) {
-  
   # Set simulation global parameters, define functions, and run simulation
   doSimulation <- reactive({
-    
     # Run (take a depdendency) with runSimulation action button pressed
     input$runSimulation
     
     ### Define global parameters
     N <- as.numeric(input$Players) # Number of agents
-    Duration <- as.numeric(input$Duration) # Number of rounds of play
+    Duration <-
+      as.numeric(input$Duration) # Number of rounds of play
     
     # Create Social network
     nodes <- c(1:N) # nodes
-
+    
     # Complete graph
-    if (input$NetworkType == "Complete") { 
+    if (input$NetworkType == "Complete") {
       edges <- data.frame(from = rep(1:N, each = N), to = rep(1:N, N))
-      selfEdge <- N * c(0:(N-1)) + c(1:N)
-      edges <- edges[-selfEdge,]
+      selfEdge <- N * c(0:(N - 1)) + c(1:N)
+      edges <- edges[-selfEdge, ]
     }
     # Regular graph
     if (input$NetworkType == "Regular") {
-      regDegree <- as.numeric(input$regDegree)/2
+      regDegree <- as.numeric(input$regDegree) / 2
       x <- rep(1:N, each = regDegree)
       y <- x + 1:regDegree
       y[y > N] <- y[y > N] - N
-      edges <- data.frame(from = x, to = y)  
+      edges <- data.frame(from = x, to = y)
     }
     # Circle graph
     if (input$NetworkType == "Circle") {
@@ -46,24 +45,30 @@ shinyServer(function(input, output, session) {
     }
     # Star graph
     if (input$NetworkType == "Star") {
-      edges <- data.frame(from = rep(1, N-1), to = 2:N)
+      edges <- data.frame(from = rep(1, N - 1), to = 2:N)
     }
     # Random graph
     if (input$NetworkType == "Random") {
       numberOfPossibleEdges <- choose(N, 2)
-      numberOfEdges <- ceiling(numberOfPossibleEdges * as.numeric(input$NetworkDensity))
+      numberOfEdges <-
+        ceiling(numberOfPossibleEdges * as.numeric(input$NetworkDensity))
       possibleEdges <- data.frame(t(combn(1:N, 2)))
       colnames(possibleEdges) <- c("from", "to")
-      randomEdgesSubset <- sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
-      edges <- possibleEdges[randomEdgesSubset, ]
+      randomEdgesSubset <-
+        sample(1:numberOfPossibleEdges, numberOfEdges, replace = FALSE)
+      edges <- possibleEdges[randomEdgesSubset,]
     }
     
     # (Adjacency) matrix of the neighbors for each player (node)
-    adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N-1))
+    adjacencyMatrix <- data.frame(matrix(NA, nrow = N, ncol = N - 1))
     for (m in 1:N) {
       d <- subset(edges, from == m | to == m)
-      if ( nrow(d)!=0 ) { d <- unique(d[d != m]) } else { d <- c() }
-      adjacencyMatrix[m,] <- c(d, rep(NA, N-1-length(d)))
+      if (nrow(d) != 0) {
+        d <- unique(d[d != m])
+      } else {
+        d <- c()
+      }
+      adjacencyMatrix[m, ] <- c(d, rep(NA, N - 1 - length(d)))
     }
     
     # Initial declarations
@@ -71,29 +76,42 @@ shinyServer(function(input, output, session) {
       NetworkChoices <- rep(1, N)
     }
     if (input$InitialDeclarations == "Uniformly at Random") {
-      NetworkChoices <- rbinom(N, 1, .5) 
+      NetworkChoices <- rbinom(N, 1, .5)
     }
     if (input$InitialDeclarations == "Consensus on False State") {
       NetworkChoices <- rep(0, N)
     }
     
     # Matrices to save the coming history of declarations
-    HistoryOfPlay <- matrix(NA, nrow = (N*Duration + 1), ncol = N) # history of play
-    HistoryOfPlay[1,] <- NetworkChoices # Save the initial conditions in the first row of history of play
+    HistoryOfPlay <-
+      matrix(NA, nrow = (N * Duration + 1), ncol = N) # history of play
+    HistoryOfPlay[1, ] <-
+      NetworkChoices # Save the initial conditions in the first row of history of play
     
     # Create the population type distribution,
     # where α_i denotes the truth-seeking orientation of agent i,
     # and (1 - α_i) denotes her coordination orientation,
     # so the population type vector is given by α=(α_1,...,α_N)
-    if (input$TypeDistribution == "All Truth-Seeking") { Alpha <- rep(1, N) }
-    if (input$TypeDistribution == "Heterogeneous") { Alpha <- rbeta(N, 1, 1) }
-    if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
+    if (input$TypeDistribution == "All Truth-Seeking") {
+      Alpha <- rep(1, N)
+    }
+    if (input$TypeDistribution == "Heterogeneous") {
+      Alpha <- rbeta(N, 1, 1)
+    }
+    if (input$TypeDistribution == "All Conformist") {
+      Alpha <- rep(0, N)
+    }
     
     # Set the population initial belief
-    Prior <- InitialPrior <- c(0.5) # initial ignorance prior for all agents
-    PublicBelief <- c(InitialPrior) # evolution of public belief vector, starting with initial prior
-    InitialProportionTrueStateDeclaration <- table(factor(NetworkChoices, c(0, 1)))[[2]] / N
-    PublicDeclarations <- c(InitialProportionTrueStateDeclaration) # evolution of public declarations, starting with initial proportions
+    Prior <-
+      InitialPrior <-
+      as.numeric(input$InitialBelief) # initial ignorance prior for all agents
+    PublicBelief <-
+      c(InitialPrior) # evolution of public belief vector, starting with initial prior
+    InitialProportionTrueStateDeclaration <-
+      table(factor(NetworkChoices, c(0, 1)))[[2]] / N
+    PublicDeclarations <-
+      c(InitialProportionTrueStateDeclaration) # evolution of public declarations, starting with initial proportions
     
     # Set the true state of the world
     Theta <- 1 # where state 0 is denoted by Orange, and 1 by Blue
@@ -108,8 +126,12 @@ shinyServer(function(input, output, session) {
     #            and cdf: F0(x) = 2x - x^2, hence F0^-1(x) = 1-(1-x)^(1/2)
     #   State 1 has pdf : f1(x) = 2x,
     #           and cdf : F1(x) = x^2, hence F1^-1(x) = x^(1/2)
-    F0_inverse <- function(x) { 1-(1-x)^(1/2) }
-    F1_inverse <- function(x) { x^(1/2) }
+    F0_inverse <- function(x) {
+      1 - (1 - x) ^ (1 / 2)
+    }
+    F1_inverse <- function(x) {
+      x ^ (1 / 2)
+    }
     
     # SIGNALS about STATES of the WORLD
     # Define the function corresponding to the acquisition of a SIGNAL
@@ -118,7 +140,10 @@ shinyServer(function(input, output, session) {
       # Draw a realization from the uniform distribution
       S <- array(runif (1, min = 0, max = 1), 1)
       # and apply the correct distribution transformation, depending on the state of the world Theta
-      ifelse(Theta == 0, w <- apply(S , 1 , FUN = F0_inverse), w <- apply(S , 1 , FUN = F1_inverse))
+      ifelse(Theta == 0,
+             w <-
+               apply(S , 1 , FUN = F0_inverse),
+             w <- apply(S , 1 , FUN = F1_inverse))
       return(w)
     }
     
@@ -128,8 +153,8 @@ shinyServer(function(input, output, session) {
     # given the product of the likelihood of the datat D given C,
     # over the total probability of D
     Credence <- function(i, C, S) {
-      x <- (1 + ( ( 1 - Prior ) / Prior ) * ( (1 - S) / S ) ) ^ -1
-      z <- ifelse( C == 1, x, (1 - x) )
+      x <- (1 + ((1 - Prior) / Prior) * ((1 - S) / S)) ^ -1
+      z <- ifelse(C == 1, x, (1 - x))
       # print(paste("Player", i, "POSTERIOR PROBABILITY for state", C, sep = " "))
       # print(z)
       return(z)
@@ -146,13 +171,14 @@ shinyServer(function(input, output, session) {
     
     # Define the SOCIAL COORDINATION payoff to player i for choice C
     CoordinationPayoff <- function(i, C) {
-      Neighbors <- adjacencyMatrix[i,]
+      Neighbors <- adjacencyMatrix[i, ]
       Neighbors <- Neighbors[!is.na(Neighbors)]
       if (length(Neighbors) != 0) {
-        z <- table(factor(NetworkChoices[Neighbors], c(0,1)))[[C+1]] / length(Neighbors)
+        z <-
+          table(factor(NetworkChoices[Neighbors], c(0, 1)))[[C + 1]] / length(Neighbors)
         # print(paste("Player", i, "COORDINATION PAYOFF for action", C, sep = " "))
         # print(z)
-      } else { 
+      } else {
         z <- 0
       }
       return(z)
@@ -163,7 +189,8 @@ shinyServer(function(input, output, session) {
     # the product of her truth-seeking orientation α_i and her truth-seeking payoff
     # and the product of her coordination orientation (1 - α_i) and coordination payoff
     EU <- function(i, C, S) {
-      z <- Alpha[i] * TruthSeekingPayoff(i, C, S) + (1 - Alpha[i]) * CoordinationPayoff(i, C)
+      z <-
+        Alpha[i] * TruthSeekingPayoff(i, C, S) + (1 - Alpha[i]) * CoordinationPayoff(i, C)
       # print(paste("Player", i, "EXPECTED UTILITY for action", C, sep = " "))
       # print(z)
       return(z)
@@ -180,12 +207,13 @@ shinyServer(function(input, output, session) {
       
       # Calculate the expected payoff to agent i for each declaration: 0, 1
       # and save this as a vector
-      EUvector <- c( EU(i, 0, S), EU(i, 1, S) )
+      EUvector <- c(EU(i, 0, S), EU(i, 1, S))
       # If the payoffs are not tied, choose the declaration with the highest payoff
-      if ( EUvector[1] != EUvector[2] ) {
-        z <- which.max(c( EU(i, 0, S), EU(i, 1, S) )) - 1
-      } else { # if there is a payoff tie, choose a declaration at random 
-        z <- sample(c(1,0), 1, .5)
+      if (EUvector[1] != EUvector[2]) {
+        z <- which.max(c(EU(i, 0, S), EU(i, 1, S))) - 1
+      } else {
+        # if there is a payoff tie, choose a declaration at random
+        z <- sample(c(1, 0), 1, .5)
       }
       
       # print(paste("Player", i, "BEST RESPONSE", sep = " "))
@@ -204,56 +232,75 @@ shinyServer(function(input, output, session) {
     # whereby all players update their beliefs
     # based on the declaration of the focal player
     PublicPrior <- function(i, z) {
-      
       # Retrieve the relevant parameters
       Pr <-  Prior
       Ns <-  CoordinationPayoff(i, 1)
       
       # Check if agent is isolated (has no coordination payoff)
-      Neighbors <- adjacencyMatrix[i,]
+      Neighbors <- adjacencyMatrix[i, ]
       Neighbors <- Neighbors[!is.na(Neighbors)]
-      Isolated  <- ( length(Neighbors) == 0 )
+      Isolated  <- (length(Neighbors) == 0)
       
-      if (Isolated == FALSE ) {
+      if (Isolated == FALSE) {
         # Then, compute the likelihood P(z|Theta) of her action given the state Theta
         fTheta <- function(a) {
-          (1 - (1 / (1 + ((Pr / (1 - Pr)) * (((((1 - a) * (1-2 * Ns) / (2 * a)) + (1 / 2))^-1) - 1)))^2))
+          (1 - (1 / (1 + ((Pr / (1 - Pr)) * (((((1 - a) * (1 - 2 * Ns) / (2 * a)) + (1 / 2)
+          ) ^ -1) - 1)
+          )) ^ 2))
         }
         if (Ns > .5) {
-          L1 <- integrate(fTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + (1 - (1/(2*Ns)))
+          L1 <-
+            integrate(fTheta, lower = (1 - (1 / (2 * Ns))), upper = 1)[[1]] + (1 - (1 /
+                                                                                      (2 * Ns)))
         } else {
-          L1 <- integrate(fTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]]
+          L1 <- integrate(fTheta, lower = ((1 - 2 * Ns) / (2 - 2 * Ns)), upper = 1)[[1]]
         }
         
         # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
         fNotTheta <- function(a) {
-          (1 - (1/(1 + ((Pr / (1 - Pr)) * (((((1-a) * (1-2*Ns) / (2*a)) + (1/2))^-1) - 1)))))
+          (1 - (1 / (1 + ((Pr / (1 - Pr)) * (((((1 - a) * (1 - 2 * Ns) / (2 * a)) + (1 /
+                                                                                       2)
+          ) ^ -1) - 1)
+          ))))
         }
         if (Ns > .5) {
-          L0 <- 2*integrate(fNotTheta, lower = (1-(1/(2*Ns))), upper = 1)[[1]] + 2*(1-(1/(2*Ns))) - L1
+          L0 <-
+            2 * integrate(fNotTheta, lower = (1 - (1 / (2 * Ns))), upper = 1)[[1]] + 2 *
+            (1 - (1 / (2 * Ns))) - L1
         } else {
-          L0 <- 2*integrate(fNotTheta, lower = ((1-2*Ns)/(2-2*Ns)), upper = 1)[[1]] - L1
+          L0 <-
+            2 * integrate(fNotTheta, lower = ((1 - 2 * Ns) / (2 - 2 * Ns)), upper = 1)[[1]] - L1
         }
       }
       
-      if (Isolated == TRUE ) {
-        fTheta <- function(a) { 2*a }
-        fNotTheta <- function(a) { 2 - 2*a }
+      if (Isolated == TRUE) {
+        fTheta <- function(a) {
+          2 * a
+        }
+        fNotTheta <- function(a) {
+          2 - 2 * a
+        }
         # Compute the likelihood P(z|Theta) of her action given the state Theta
-        L1 <- integrate(fTheta, lower = (1-Pr), upper = 1)[[1]]
+        L1 <- integrate(fTheta, lower = (1 - Pr), upper = 1)[[1]]
         # Next, compute the likelihood P(z|¬Theta) of her action given the state ¬Theta
-        L0 <- integrate(fNotTheta, lower = (1-Pr), upper = 1)[[1]]
+        L0 <- integrate(fNotTheta, lower = (1 - Pr), upper = 1)[[1]]
       }
       
       # print("LIKELIHOOD L1 of declaration given Theta: 1")
-      if (z == 0) { L1 <- (1-L1) } # Take the complement of the probability for declaration ¬z
+      if (z == 0) {
+        L1 <-
+          (1 - L1)
+      } # Take the complement of the probability for declaration ¬z
       # print(L1)
       # print("LIKELIHOOD L0 of declaration given ¬Theta: 0")
-      if (z == 0) { L0 <- (1-L0) } # Take the complement of the probability for declaration ¬z
+      if (z == 0) {
+        L0 <-
+          (1 - L0)
+      } # Take the complement of the probability for declaration ¬z
       # print(L0)
       
       # Compute P(Theta|z) or P(Theta|¬z)
-      w <- (1+((1-Prior)/Prior)*(L0/L1))^-1
+      w <- (1 + ((1 - Prior) / Prior) * (L0 / L1)) ^ -1
       # print("POSTERIOR/PUBLIC BELIEF")
       # print(w)
       return(w)
@@ -261,30 +308,34 @@ shinyServer(function(input, output, session) {
     
     
     #### Initialize Simulation
+    
+    # Nature randomly chooses the state of the world as either 0 or 1,
+    # which determines the corresponding pdfs f1, or F0
+    # Theta <- rbinom(1, 1, prob = 0.5) + 1
+    # print(paste("The true state of the world is", Theta , sep = ))
+    # print(Theta)
+    
+    # print("------------------------------")
+    # print("Initial conditions")
+    # print(NetworkChoices)
+    
+    # Initialize progress loader
+    withProgress(message = 'Computing:', value = 0, {
       
-      # Nature randomly chooses the state of the world as either 0 or 1,
-      # which determines the corresponding pdfs f1, or F0
-      # Theta <- rbinom(1, 1, prob = 0.5) + 1
-      # print(paste("The true state of the world is", Theta , sep = ))
-      # print(Theta)
-  
-      # print("------------------------------")
-      # print("Initial conditions")
-      # print(NetworkChoices)
-  
       ### Run a round of the Simulation
-      for(t in 1:Duration) {
-  
+      for (t in 1:Duration) {
         # print("------------------------------")
         # print(paste("ROUND", t, sep = ))
-  
+        
         # Set initial ignorance prior for all agents,
-        if (t == 1) { Prior <- InitialPrior }
+        if (t == 1) {
+          Prior <- InitialPrior
+        }
         
         # Generate the round's random order of play
         agentIndex <- sample(1:N, N, replace = FALSE)
-      
-        for(i in 1:N) {
+        
+        for (i in 1:N) {
           # Determine which agent is the focal player
           # who will now receive a signal from nature,
           # and make her public declaration
@@ -292,172 +343,214 @@ shinyServer(function(input, output, session) {
           
           # Have agent i get her private signal S about the state of the world
           S <- Signal()
-  
+          
           # Have agent i update her belief about the state of the world,
           # calculate her current coordination payoff based on the declarations of
           # and choose how to act.
           # That is, choose which social policy to DECLARE
           DeclarationOfFocalAgent <- BR(FocalAgent, S)
-  
+          
           # Update the public prior, given the declaration of agent i
           Prior <- PublicPrior(FocalAgent, DeclarationOfFocalAgent)
           # Update the history of belief
-          PublicBelief <- append(PublicBelief, Prior, after = length(PublicBelief))
-  
+          PublicBelief <-
+            append(PublicBelief, Prior, after = length(PublicBelief))
+          
           # Update the vector of current network choices
           # with the agent's DECLARATION z
           NetworkChoices[FocalAgent] <- DeclarationOfFocalAgent
-  
+          
           # Update the history of play for the round
-          HistoryOfPlay[(N * (t - 1) + i) + 1, ] <- NetworkChoices
-  
+          HistoryOfPlay[(N * (t - 1) + i) + 1,] <- NetworkChoices
+          
           # Record the proportion of players declaring Theta
           PublicDeclarations <-
             append(PublicDeclarations,
                    table(factor(NetworkChoices, c(0, 1)))[[2]] / N,
                    after = length(PublicDeclarations))
         }
-  
+        
         # Print the history of play
         # print("------------------------------")
         # print("HISTORY of PLAY")
         # print(HistoryOfPlay)
-  
+        
         # Replace the agents
         # by reset the Alpha vector
-        if (input$TypeDistribution == "All Truth-Seeking") { Alpha <- rep(1, N) }
-        if (input$TypeDistribution == "Heterogeneous") { Alpha <- rbeta(N, 1, 1) }
-        if (input$TypeDistribution == "All Conformist") { Alpha <- rep(0, N) }
+        if (input$TypeDistribution == "All Truth-Seeking") {
+          Alpha <- rep(1, N)
+        }
+        if (input$TypeDistribution == "Heterogeneous") {
+          Alpha <- rbeta(N, 1, 1)
+        }
+        if (input$TypeDistribution == "All Conformist") {
+          Alpha <- rep(0, N)
+        }
+        
+        # Increment the progress bar, and update the detail text.
+        incProgress(1 / Duration, detail = paste("Round", t, sep = " "))
+        
       }
-      
-      ### OUTPUT RESULTS to be accessed by other reactive contexts (i.e., network graph & plots)
-      return(list(N, Duration, NetworkChoices, nodes, edges, PublicDeclarations, PublicBelief, HistoryOfPlay))
-      
+    
     })
+  
+    ### OUTPUT RESULTS to be accessed by other reactive contexts (i.e., network graph & plots)
+    return(
+      list(
+        N,
+        Duration,
+        NetworkChoices,
+        nodes,
+        edges,
+        PublicDeclarations,
+        PublicBelief,
+        HistoryOfPlay
+      )
+    )
     
+  })
+  
+  
+  ### Plot initial network, and its evolution over time
+  output$networkAnimation <- renderPlot({
+    # Acquire (current) relevant global paremeter settings
+    nodes <- doSimulation()[[4]]
+    edges <- doSimulation()[[5]]
+    HistoryOfPlay <- doSimulation()[[8]]
     
-    ### Plot initial network, and its evolution over time
-    output$networkAnimation <- renderPlot({
-      
-      # Acquire (current) relevant global paremeter settings
-      nodes <- doSimulation()[[4]]
-      edges <- doSimulation()[[5]]
-      HistoryOfPlay <- doSimulation()[[8]]
-      
-      # Create graph structure for plotting
-      net <- graph_from_data_frame(d = edges, vertices = nodes, directed = F)
-      net <- simplify(net, remove.multiple = T, remove.loops = T)
-      l <- layout_in_circle(net)
-      
-      # Output graph plot
-      plot(net, 
-           edge.arrow.size = .4, 
-           vertex.label = NA, 
-           layout = l,
-           vertex.frame.color = "gray", 
-           vertex.color = HistoryOfPlay[input$simulationStep + 1,],
-           edge.color="gray")
-      
-      # Outplut plot legend
-      par(xpd=TRUE)
-      legend(.6, 1.35, 
-             c("Declaration of True State", "Declaration of False State"), 
-             pch = 21,
-             col = "gray", 
-             pt.bg = c("orange2", "white"), 
-             pt.cex = 2, 
-             cex = 1, 
-             bty = "n", 
-             ncol = 1)
-      
-    }, height = 600, width = 600)
+    # Create graph structure for plotting
+    net <-
+      graph_from_data_frame(d = edges,
+                            vertices = nodes,
+                            directed = F)
+    net <- simplify(net, remove.multiple = T, remove.loops = T)
+    l <- layout_in_circle(net)
     
+    # Output graph plot
+    plot(
+      net,
+      edge.arrow.size = .4,
+      vertex.label = NA,
+      layout = l,
+      vertex.frame.color = "gray",
+      vertex.color = HistoryOfPlay[input$simulationStep + 1, ],
+      edge.color = "gray"
+    )
     
-    ### Plot of evolution of public belief and declarations
-    output$evolutionPlot <- renderPlot({
-      
-      # Acquire (current) relevant global paremeters, and simlulation outputs
-      N <- doSimulation()[[1]]
-      Duration <- doSimulation()[[2]]
-      PublicDeclarations <- doSimulation()[[6]]
-      PublicBelief <- doSimulation()[[7]]
-      
-      # Print the evolution of the public belief
-      PublicBeliefActionPlot <- data.frame(Turn = 0:(N*Duration), PublicBelief, PublicDeclarations)
-      p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
-        geom_line(data = PublicBeliefActionPlot, size = 1.5,
-                  aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")) +
-        geom_line(data = PublicBeliefActionPlot, size = 1.5,
-                  aes(x = Turn, y = PublicDeclarations, colour = "Declarations of True State  ")) +
-        ggtitle("Public belief in the true state, and its declaration, over time") +
-        labs(x = "Time", y = "Proportion") +
-        theme_bw() +
-        scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
-        scale_color_manual(values=c("orange2", "dimgray")) +
-        theme(legend.position = "bottom",
-              legend.title = element_blank(),
-              plot.title = element_text(hjust = 0.5),
-              text = element_text(size = 16),
-              legend.text = element_text(size = 14)
-              )
-      p
-      
-    }, height = 550, width = 550)
+    # Outplut plot legend
+    par(xpd = TRUE)
+    legend(
+      .6,
+      1.35,
+      c("Declaration of True State", "Declaration of False State"),
+      pch = 21,
+      col = "gray",
+      pt.bg = c("orange2", "white"),
+      pt.cex = 2,
+      cex = 1,
+      bty = "n",
+      ncol = 1,
+      y.intersp = 1.5
+    )
     
+  }, height = 600, width = 600)
+  
+  
+  ### Plot of evolution of public belief and declarations
+  output$evolutionPlot <- renderPlot({
+    # Acquire (current) relevant global paremeters, and simlulation outputs
+    N <- doSimulation()[[1]]
+    Duration <- doSimulation()[[2]]
+    PublicDeclarations <- doSimulation()[[6]]
+    PublicBelief <- doSimulation()[[7]]
     
-    ### Update interface based on inputs from other interface inputs
+    # Print the evolution of the public belief
+    PublicBeliefActionPlot <-
+      data.frame(Turn = 0:(N * Duration), PublicBelief, PublicDeclarations)
+    p <- ggplot(PublicBeliefActionPlot, aes(Turn)) +
+      geom_line(
+        data = PublicBeliefActionPlot,
+        size = 1.5,
+        aes(x = Turn, y = PublicBelief, colour = "Public Belief in True State")
+      ) +
+      geom_line(
+        data = PublicBeliefActionPlot,
+        size = 1.5,
+        aes(x = Turn, y = PublicDeclarations, colour = "Declarations of True State  ")
+      ) +
+      ggtitle("Public Belief in, and Declaration of, \n the True State, Over Time") +
+      labs(x = "Time", y = "Proportion") +
+      theme_bw() +
+      scale_y_continuous(breaks = seq(0, 1, .25), limits = c(0, 1)) +
+      scale_color_manual(values = c("orange2", "dimgray")) +
+      theme(
+        plot.title = element_text(
+          hjust = 0.5,
+          margin = margin(b = 20, unit = "pt"),
+          lineheight = 1.15
+        ),
+        axis.title.x =  element_text(margin = margin(t = 15, unit = "pt")),
+        axis.title.y =  element_text(margin = margin(r = 15, unit = "pt")),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(size = 14),
+        text = element_text(size = 16)
+      )
+    p
     
-    # Update the duration of the animation slider
-    # to be: # of Players * Duration + 1
-    observe({
-      
-      N <- as.numeric(input$Players)
-      Duration <- as.numeric(input$Duration)
-      
-      # Control the max of the simulationStep slider.
-      updateSliderInput(session, 
-                        "simulationStep",
-                        max = N * Duration)
-    })
+  }, height = 500, width = 600)
+  
+  
+  ### Update interface based on inputs from other interface inputs
+  
+  # Update the duration of the animation slider
+  # to be: # of Players * Duration + 1
+  observe({
+    N <- as.numeric(input$Players)
+    Duration <- as.numeric(input$Duration)
     
-    # Update the maximum degree of a regular network
-    # to be: # of Nodes - 1
-    observe({
-      
-      N <- as.numeric(input$Players)
-      
-      # Control the max of the simulationStep slider.
-      if (N %% 2 == 0) {
-        updateSliderInput(session, 
-                          "regDegree",
-                          max = N-2)  
-      } else {
-        updateSliderInput(session, 
-                          "regDegree",
-                          max = N-1)
-      }
-      
-    })
+    # Control the max of the simulationStep slider.
+    updateSliderInput(session,
+                      "simulationStep",
+                      max = N * Duration)
+  })
+  
+  # Update the maximum degree of a regular network
+  # to be: # of Nodes - 1
+  observe({
+    N <- as.numeric(input$Players)
     
+    # Control the max of the simulationStep slider.
+    if (N %% 2 == 0) {
+      updateSliderInput(session,
+                        "regDegree",
+                        max = N - 2)
+    } else {
+      updateSliderInput(session,
+                        "regDegree",
+                        max = N - 1)
+    }
     
-    # Reset the slider animation to t = 0
-    # when other parameters are changed
-    observe({
-      
-      input$Players
-      input$Duration
-      input$NetworkType
-      input$NetworkDensity
-      input$InitialDeclarations
-      input$TypeDistribution
-      input$runSimulation
-      
-      # Control the max of the simulationStep slider.
-      updateSliderInput(session, 
-                        "simulationStep",
-                        value = 0)
-    })
+  })
+  
+  
+  # Reset the slider animation to t = 0
+  # when other parameters are changed
+  observe({
+    input$Players
+    input$Duration
+    input$NetworkType
+    input$NetworkDensity
+    input$InitialDeclarations
+    input$TypeDistribution
+    input$runSimulation
     
+    # Control the max of the simulationStep slider.
+    updateSliderInput(session,
+                      "simulationStep",
+                      value = 0)
+  })
+  
 })
 
 ### EOD ###

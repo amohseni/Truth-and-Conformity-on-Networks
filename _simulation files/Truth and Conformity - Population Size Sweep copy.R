@@ -8,22 +8,22 @@
   
 
   # Set the working directory as you please  
-  setwd("/Users/patience/Global/Professional/Logic and Philosophy of Science/6. Projects/Model | Truth, Conformity, and Networks/_results/highVariation")
+  setwd("/Users/patience/GitHub/Truth-and-Conformity-on-Networks/results")
   
   
   ### Establish parameter sweep settings
-  numberOfSimulationsPerSetting <- 100000 # Number of simulations per parameter seting
+  numberOfSimulationsPerSetting <- 10000 # Number of simulations per parameter seting
   numberOfTurnsPerSimulation <- 100 # Number of turns per simulation
   NSweep <- seq(from = 2, to = 20, by = 2) # List of poplulation size settings
   numberOfPopulationSizes <- length(NSweep) # Number of population sizes to simulate
-  NetworkTypeSweep <- c("Circle", "Complete", "Random", "Regular", "Star") # List of network types, from among:
+  NetworkTypeSweep <- c("Complete", "Circle", "Star", "Regular", "Random") # List of network types, from among:
   # 1. Complete
   # 2. Regular
   # 3. Circle
   # 4. Star
   # 5. Random
   numberOfNetworkTypes <- length(NetworkTypeSweep) # Number of network types to simulate
-  InitialDeclarationsSweep <- c("ConsensusOnFalseState", "EvenSplit") # List of initial conditions, from among:
+  InitialDeclarationsSweep <- c("EvenSplit", "ConsensusOnFalseState") # List of initial conditions, from among:
   # 1. EvenSplit
   # 2. UniformlyAtRandom
   # 3. ConsensusOnFalseState  
@@ -119,8 +119,10 @@
           }
           
           # Create the population types and initial beliefs
-          BetaParameterforTruthSeeking <- 1 # Increasing this will increase the proportion of truth-seeking
-          BetaParameterforConformity <- 1 # Increasing this will increase the proportion of conformity
+          # Increasing this will increase the proportion of truth-seeking
+          BetaParameterforTruthSeeking <- 1 
+          # Increasing this will increase the proportion of conformity
+          BetaParameterforConformity <- 5 
           Alpha <-
             rbeta(N,
                   BetaParameterforTruthSeeking,
@@ -134,7 +136,6 @@
           # Set the true state of the world
           Theta <- 1 # where-in plots—state 1 is denoted by Orange, and 0 by White
           
-          
           ### Define Functions
           
           # STATES of the WORLD
@@ -143,7 +144,7 @@
           # with the parameters
           Mean1 <- 1 # Mean for distribution of signals if Theta is true: state is 1  
           Mean0 <- -1 # Mean for distribution of signals if Theta is false: state is 0
-          Variance <- 50
+          Variance <- 10
           StandardDeviation <- sqrt(Variance) # Variance for both distributions of signals
           fTheta1 <- function(Signal) { return( dnorm(Signal, mean = Mean1, sd = StandardDeviation) ) }
           fTheta0 <- function(Signal) { return( dnorm(Signal, mean = Mean0, sd = StandardDeviation) ) }  

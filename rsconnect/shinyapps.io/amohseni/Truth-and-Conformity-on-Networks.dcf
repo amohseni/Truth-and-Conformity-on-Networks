@@ -1,0 +1,11 @@
+name: Truth-and-Conformity-on-Networks
+title: Truth-and-Conformity-on-Networks
+account: amohseni
+server: shinyapps.io
+appId: 210297
+bundleId: 965799
+url: https://amohseni.shinyapps.io/Truth-and-Conformity-on-Networks/
+when: 1504476275.38903
+asMultiple: FALSE
+asStatic: FALSE
+ignoredFiles: _data analysis algorithms/_Data Analysis - Degree - From False Consensus.R|_data analysis algorithms/_Data Analysis - Degree - Hitting Times.R|_data analysis algorithms/_Data Analysis - Population - Distribution by Turn.R|_data analysis algorithms/_Data Analysis - Population - From Even Split.R|_data analysis algorithms/_Data Analysis - Population - From Random Initial Conditions.R|_data analysis algorithms/_Data Analysis - Population - Hitting Times.R|_data analysis algorithms/.DS_Store|_data analysis algorithms/.Rapp.history|_simulation files/.DS_Store|_simulation files/Truth and Conformity - Core.R|_simulation files/Truth and Conformity - Degree Sweep copy.R|_simulation files/Truth and Conformity - Population Size Sweep copy.R|_simulation files/Archive/OLD.server.TruthAndConformity.withTypeDistribution.R|_simulation files/Archive/OLD.TruthAndConformity.Linear.Core.R|_simulation files/Archive/OLD.TruthAndConformity.Linear.Degree Sweep.R|_simulation files/Archive/OLD.TruthAndConformity.Linear.Population Size Sweep.R|_simulation files/Archive/OLD.ui.TruthAndConformity.withTypeDistribution.R|_simulation files/Tests/Test - Credence Function.R|_simulation files/Tests/Test - Gaussian Distributions.R|_simulation files/Tests/Test - Likelihoods - Gaussian + Beta.R|_simulation files/Tests/Test - Likelihoods - Linear + Uniform.R|_simulation files/Tests/Test - Public Prior - Gaussian + Beta.R|www/.DS_Store
